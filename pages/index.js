@@ -6,7 +6,7 @@ import styles from '../styles/home.module.css'
 function throwError() {
   console.log(
     // The function body() is not defined
-    document.body()
+    document.body
   )
 }
 
@@ -56,7 +56,7 @@ function Home() {
         </p>
         <Button
           onClick={(e) => {
-            setTimeout(() => document.parentNode(), 0)
+            setTimeout(() => document.documentElement, 0)
             throwError()
           }}
         >
