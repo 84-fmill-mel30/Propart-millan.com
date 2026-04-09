@@ -1,144 +1,1235 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PROPART V54 - UNIVERSAL BLE</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap');
-        body { background-color: #000; color: #fff; font-family: 'Rajdhani', sans-serif; overflow: hidden; }
-        
-        .screen { height: 100vh; display: flex; flex-direction: column; padding: 20px; align-items: center; justify-content: center; }
-        
-        /* GAUGE */
-        .gauge-circle { width: 160px; height: 160px; border-radius: 50%; border: 8px solid #222; display: flex; align-items: center; justify-content: center; margin: 0 auto; position: relative; transition: all 0.3s; }
-        .gauge-active { border-color: #2563eb; box-shadow: 0 0 40px #2563eb; }
-        
-        /* BOTÓN */
-        .btn-connect {
-            background: linear-gradient(90deg, #2563eb, #1d4ed8);
-            color: white; padding: 20px; border-radius: 15px;
-            font-weight: bold; font-size: 18px; width: 100%;
-            box-shadow: 0 5px 20px rgba(37, 99, 235, 0.4);
-            margin-top: 20px; border: 1px solid #3b82f6;
-        }
-        .btn-connect:active { transform: scale(0.98); }
-    </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"/>
+<title>PROPART · ANALIZADOR DIAGRAMAS + DIAGNÓSTICO IA</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#03070E;--bg2:#060F1A;--card:#091828;--card2:#0C2040;
+  --blue:#1E8CE0;--green:#00C48C;--red:#FF4B5C;--gold:#F5A623;
+  --purple:#A855F7;--cyan:#00D4E8;--orange:#FF7A2F;
+  --white:#EEF6FF;--lgray:#6A8CAA;--gray:#2A4060;--border:#12304E;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:'Exo 2',sans-serif;color:var(--white);display:flex;flex-direction:column;
+  max-width:520px;margin:0 auto;box-shadow:0 0 80px rgba(0,0,0,.9)}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:repeating-linear-gradient(0deg,transparent 27px,rgba(30,140,224,.013) 28px),
+  repeating-linear-gradient(90deg,transparent 27px,rgba(30,140,224,.013) 28px)}
+
+/* ── HDR ── */
+.hdr{background:linear-gradient(180deg,#020810,#040D1A);border-bottom:2px solid var(--purple);
+  padding:8px 12px;display:flex;align-items:center;gap:9px;flex-shrink:0;z-index:10;position:relative;
+  box-shadow:0 4px 28px rgba(168,85,247,.22)}
+.hdr-logo{width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--purple),#2D1B69);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;box-shadow:0 0 18px rgba(168,85,247,.5);flex-shrink:0}
+.hdr-info h1{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;line-height:1}
+.hdr-info p{font-size:7px;color:var(--purple);letter-spacing:1.5px;margin-top:1px}
+.hdr-badge{margin-left:auto;background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3);
+  border-radius:6px;padding:3px 9px;font-family:'Rajdhani',sans-serif;font-size:8px;
+  font-weight:700;color:var(--purple);letter-spacing:1px;display:flex;align-items:center;gap:5px;flex-shrink:0}
+.ai-dot{width:6px;height:6px;border-radius:50%;background:var(--purple);animation:blink 1.4s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.25;transform:scale(.5)}}
+
+/* ── MAIN ── */
+.main{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;z-index:1}
+.main::-webkit-scrollbar{width:2px}
+.main::-webkit-scrollbar-thumb{background:#0A3A60;border-radius:2px}
+.sec{padding:10px 11px 0}
+
+/* ── MODE TABS (top) ── */
+.mode-tabs{display:flex;gap:0;margin-bottom:9px;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+.mtab{flex:1;padding:10px 8px;background:var(--card);font-family:'Rajdhani',sans-serif;
+  font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;color:var(--lgray);
+  transition:all .2s;text-align:center;border:none}
+.mtab.on{background:linear-gradient(135deg,rgba(168,85,247,.2),rgba(67,56,202,.2));
+  color:var(--purple);box-shadow:inset 0 -2px 0 var(--purple)}
+.mtab:active{transform:scale(.97)}
+
+/* ── VEHICLE SELECTOR ── */
+.veh-sel{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:11px 12px;margin-bottom:9px}
+.veh-sel select{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+  padding:9px 11px;font-size:12px;color:var(--white);font-family:'Exo 2',sans-serif;outline:none;
+  cursor:pointer;appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236A8CAA'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;margin-top:6px}
+.veh-sel select option{background:var(--bg);color:var(--white)}
+.veh-info{display:none;margin-top:8px;padding:8px 10px;background:rgba(168,85,247,.06);
+  border:1px solid rgba(168,85,247,.15);border-radius:8px}
+.veh-info-row{display:flex;justify-content:space-between;font-size:9px;padding:2px 0}
+.veh-info-row span:first-child{color:var(--lgray);font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.5px}
+.veh-info-row span:last-child{color:var(--white);font-family:'Share Tech Mono',monospace}
+
+/* ── UPLOAD ── */
+.drop-zone{border:2px dashed rgba(168,85,247,.3);border-radius:14px;
+  padding:22px 14px;text-align:center;cursor:pointer;transition:all .3s;
+  position:relative;overflow:hidden;background:rgba(168,85,247,.03);margin-bottom:9px}
+.drop-zone::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(168,85,247,.07),transparent 70%)}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--purple);background:rgba(168,85,247,.08)}
+.dz-icon{font-size:36px;display:block;animation:float 3s ease-in-out infinite;margin-bottom:6px}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.dz-title{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;margin-bottom:2px}
+.dz-sub{font-size:8px;color:var(--lgray);line-height:1.7}
+.dz-fmts{display:flex;justify-content:center;gap:5px;margin-top:8px;flex-wrap:wrap}
+.fmt{font-size:7px;font-family:'Rajdhani',sans-serif;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid;letter-spacing:.5px}
+#file-input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:10}
+.prev-wrap{display:none;position:relative;border-radius:11px;overflow:hidden;
+  border:1px solid var(--border);margin-bottom:9px;background:#000;cursor:pointer}
+#prev-img{width:100%;display:block;max-height:160px;object-fit:contain;background:#000}
+.prev-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);
+  display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+.prev-wrap:hover .prev-overlay{opacity:1}
+.prev-lbl{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;
+  background:rgba(168,85,247,.8);padding:5px 14px;border-radius:7px;letter-spacing:1px}
+.prev-x{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;
+  background:rgba(255,75,92,.85);border:none;cursor:pointer;color:#fff;font-size:12px;
+  display:flex;align-items:center;justify-content:center;z-index:2}
+
+/* ── BUTTONS ── */
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px}
+.btn-analyze{width:100%;background:linear-gradient(135deg,#7C3AED,#4338CA);color:#fff;
+  border:none;border-radius:11px;padding:12px;font-family:'Rajdhani',sans-serif;
+  font-weight:700;font-size:12px;letter-spacing:1.5px;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  box-shadow:0 4px 22px rgba(124,58,237,.45)}
+.btn-analyze:disabled{opacity:.35;cursor:not-allowed}
+.btn-analyze:not(:disabled):active{transform:scale(.98)}
+.btn-db{background:linear-gradient(135deg,#0E7490,#155E75);color:#fff;
+  border:none;border-radius:11px;padding:12px;font-family:'Rajdhani',sans-serif;
+  font-weight:700;font-size:12px;letter-spacing:1.5px;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  box-shadow:0 4px 22px rgba(14,116,144,.4)}
+.btn-db:disabled{opacity:.35;cursor:not-allowed}
+.btn-db:not(:disabled):active{transform:scale(.98)}
+
+/* ── PROGRESS ── */
+.prog-wrap{display:none;margin-bottom:10px}
+.prog-bg{height:5px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--cyan));
+  border-radius:3px;transition:width .5s ease;width:0}
+.prog-txt{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--cyan);line-height:2}
+
+/* ── FILTER TABS ── */
+.filter-tabs{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
+.ftab{padding:6px 10px;border-radius:20px;background:var(--bg2);border:1px solid var(--border);
+  font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;cursor:pointer;
+  transition:all .2s;letter-spacing:.5px;display:flex;align-items:center;gap:4px}
+.ftab.on{box-shadow:0 0 10px var(--glow)}
+.ftab .cnt{font-family:'Share Tech Mono',monospace;font-size:8px;opacity:.7}
+.ftab:active{transform:scale(.92)}
+
+/* ── VIEW TABS ── */
+.view-tabs{display:flex;gap:5px;margin-bottom:8px}
+.vtab{flex:1;padding:7px;border-radius:8px;background:var(--card);border:1px solid var(--border);
+  font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;letter-spacing:.8px;
+  cursor:pointer;color:var(--lgray);transition:all .2s;text-align:center}
+.vtab.on{background:rgba(168,85,247,.18);border-color:var(--purple);color:var(--purple)}
+
+/* ── CANVAS ── */
+.canvas-wrap{position:relative;border-radius:11px;overflow:hidden;border:1px solid var(--border);background:#050B14}
+#diag-canvas{display:block;width:100%}
+#overlay-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#hit-canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair}
+.c-badge{position:absolute;top:6px;left:6px;background:rgba(3,7,14,.85);
+  border-radius:5px;padding:3px 9px;font-family:'Share Tech Mono',monospace;
+  font-size:7.5px;color:var(--cyan);pointer-events:none;border:1px solid rgba(0,212,232,.2)}
+.c-stats{position:absolute;top:6px;right:6px;background:rgba(3,7,14,.85);
+  border-radius:5px;padding:3px 9px;font-family:'Share Tech Mono',monospace;
+  font-size:7px;color:var(--green);pointer-events:none;border:1px solid rgba(0,196,140,.2)}
+.c-hint{position:absolute;bottom:6px;right:6px;background:rgba(3,7,14,.7);
+  border-radius:5px;padding:2px 7px;font-size:7px;color:var(--lgray);pointer-events:none;
+  font-family:'Rajdhani',sans-serif}
+
+.zoom-row{display:flex;align-items:center;gap:6px;margin-top:7px}
+.zbtn{width:32px;height:32px;border-radius:8px;background:var(--card);
+  border:1px solid var(--border);cursor:pointer;font-size:18px;
+  display:flex;align-items:center;justify-content:center;color:var(--white);transition:all .15s}
+.zbtn:active{transform:scale(.88);background:rgba(168,85,247,.15)}
+.zlabel{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--lgray);flex:1;text-align:center}
+
+/* ── MISC UI ── */
+.legend-box,.filter-box,.ai-card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:11px 12px;margin-bottom:9px}
+.ai-card{border-color:rgba(168,85,247,.28)}
+.box-title{font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:var(--lgray);margin-bottom:9px}
+.leg-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.leg-row{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:7px;cursor:pointer;transition:all .2s;border:1px solid transparent}
+.leg-row:hover{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08)}
+.wire-swatch{width:28px;height:5px;border-radius:3px;flex-shrink:0}
+.leg-name{font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700}
+.leg-v{font-family:'Share Tech Mono',monospace;font-size:7.5px;color:var(--lgray)}
+.fsearch{display:flex;align-items:center;gap:7px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:7px 11px;margin-bottom:8px}
+.fsearch input{background:none;border:none;flex:1;font-size:12px;outline:none;color:var(--white);font-family:'Exo 2',sans-serif}
+.brow{display:flex;gap:6px;margin-top:8px}
+.bsm{flex:1;padding:8px;border-radius:8px;font-family:'Rajdhani',sans-serif;font-weight:700;
+  font-size:9px;letter-spacing:.8px;cursor:pointer;border:1px solid var(--border);
+  background:var(--card);color:var(--lgray);transition:all .15s}
+.bsm.blu{background:rgba(30,140,224,.12);border-color:var(--blue);color:var(--blue)}
+.bsm.pur{background:rgba(168,85,247,.12);border-color:var(--purple);color:var(--purple)}
+.bsm.grn{background:rgba(0,196,140,.12);border-color:var(--green);color:var(--green)}
+.ai-hdr{display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.ai-ttl{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--purple)}
+.wtbl{width:100%;border-collapse:collapse;font-size:8.5px;margin-bottom:8px}
+.wtbl th{background:rgba(168,85,247,.07);color:var(--purple);font-family:'Rajdhani',sans-serif;
+  font-size:8px;letter-spacing:1px;padding:6px 8px;text-align:left;font-weight:700;
+  border-bottom:1px solid rgba(168,85,247,.2);position:sticky;top:0;z-index:2}
+.wtbl td{padding:5px 8px;border-bottom:1px solid rgba(18,48,78,.35);
+  font-family:'Share Tech Mono',monospace;color:var(--lgray);vertical-align:middle}
+.wtbl tr:hover td{background:rgba(168,85,247,.05);color:var(--white)}
+.wtbl tr.hidden-row{display:none}
+.wdot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.tbl-scroll{max-height:320px;overflow-y:auto;border-radius:8px;border:1px solid var(--border)}
+.tbl-scroll::-webkit-scrollbar{width:3px}
+.tbl-scroll::-webkit-scrollbar-thumb{background:var(--purple);border-radius:3px}
+.det-pop{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:10px 12px;margin-top:8px;display:none}
+.det-title{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;color:var(--cyan);margin-bottom:6px}
+.det-body{font-size:9px;color:var(--lgray);line-height:1.85}
+.report-txt{font-size:9.5px;color:var(--lgray);line-height:1.85;white-space:pre-wrap;
+  border-top:1px solid rgba(168,85,247,.18);padding-top:10px;margin-top:10px}
+.export-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px}
+.ebtn{padding:12px;border-radius:9px;font-family:'Rajdhani',sans-serif;font-weight:700;
+  font-size:10px;letter-spacing:1px;cursor:pointer;border:1px solid;transition:all .15s;text-align:center}
+.ebtn.blue{background:rgba(30,140,224,.12);border-color:var(--blue);color:var(--blue)}
+.ebtn.purple{background:rgba(168,85,247,.12);border-color:var(--purple);color:var(--purple)}
+
+/* ═══════════════════════════════════════════
+   AUDIO DIAGNOSTIC STYLES
+   ═══════════════════════════════════════════ */
+.audio-panel{display:none}
+.mic-zone{text-align:center;padding:20px 10px}
+.mic-btn{width:110px;height:110px;border-radius:50%;border:3px solid var(--cyan);
+  background:radial-gradient(circle,rgba(0,212,232,.12),rgba(0,212,232,.02));
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  margin:0 auto 12px;transition:all .3s;position:relative}
+.mic-btn::before{content:'';position:absolute;inset:-6px;border-radius:50%;
+  border:2px solid rgba(0,212,232,.15);animation:mic-pulse 2s ease-in-out infinite}
+.mic-btn.recording{border-color:var(--red);background:radial-gradient(circle,rgba(255,75,92,.2),rgba(255,75,92,.05));
+  box-shadow:0 0 40px rgba(255,75,92,.35)}
+.mic-btn.recording::before{border-color:rgba(255,75,92,.3);animation:mic-pulse-rec .8s ease-in-out infinite}
+.mic-btn.analyzing{border-color:var(--purple);background:radial-gradient(circle,rgba(168,85,247,.2),rgba(168,85,247,.05))}
+.mic-ico{font-size:44px;transition:transform .2s}
+.mic-btn.recording .mic-ico{animation:mic-shake .15s linear infinite}
+@keyframes mic-pulse{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.12);opacity:.15}}
+@keyframes mic-pulse-rec{0%,100%{transform:scale(1);opacity:.8}50%{transform:scale(1.2);opacity:.2}}
+@keyframes mic-shake{0%,100%{transform:rotate(0)}25%{transform:rotate(-2deg)}75%{transform:rotate(2deg)}}
+.mic-label{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;margin-bottom:4px}
+.mic-sub{font-size:8px;color:var(--lgray);line-height:1.6}
+.mic-timer{font-family:'Share Tech Mono',monospace;font-size:28px;color:var(--cyan);margin:8px 0;letter-spacing:2px}
+.mic-timer.rec{color:var(--red)}
+
+/* Audio Viz */
+.audio-viz{border-radius:11px;overflow:hidden;border:1px solid var(--border);
+  background:#050B14;margin-bottom:9px;position:relative}
+#wave-canvas{display:block;width:100%;height:80px}
+#spec-canvas{display:block;width:100%;height:100px}
+.viz-label{position:absolute;top:4px;left:8px;font-family:'Share Tech Mono',monospace;
+  font-size:7px;color:rgba(0,212,232,.6);pointer-events:none}
+.viz-label2{position:absolute;top:84px;left:8px;font-family:'Share Tech Mono',monospace;
+  font-size:7px;color:rgba(168,85,247,.6);pointer-events:none}
+
+/* Audio Stats */
+.audio-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:9px}
+.astat{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:8px;text-align:center}
+.astat-val{font-family:'Share Tech Mono',monospace;font-size:18px;font-weight:700;line-height:1}
+.astat-lbl{font-family:'Rajdhani',sans-serif;font-size:7px;font-weight:700;letter-spacing:1px;
+  color:var(--lgray);margin-top:3px}
+
+/* Diagnosis Results */
+.diag-results{display:none}
+.diag-card{background:var(--card);border-radius:11px;padding:12px;margin-bottom:8px;
+  border-left:3px solid var(--cyan);transition:all .2s}
+.diag-card.high{border-left-color:var(--red)}
+.diag-card.med{border-left-color:var(--gold)}
+.diag-card.low{border-left-color:var(--green)}
+.diag-hdr{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.diag-ico{font-size:20px}
+.diag-name{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px}
+.diag-prob{margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:11px;font-weight:700}
+.diag-body{font-size:9px;color:var(--lgray);line-height:1.8}
+.diag-body b{color:var(--white)}
+.diag-tags{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.diag-tag{font-size:7px;font-family:'Rajdhani',sans-serif;font-weight:700;padding:2px 8px;
+  border-radius:10px;background:rgba(0,212,232,.1);border:1px solid rgba(0,212,232,.25);color:var(--cyan)}
+.diag-tag.red{background:rgba(255,75,92,.1);border-color:rgba(255,75,92,.25);color:var(--red)}
+
+/* AI Analysis */
+.ai-audio-card{background:var(--card);border:1px solid rgba(168,85,247,.3);border-radius:11px;
+  padding:12px;margin-bottom:9px;display:none}
+.ai-audio-txt{font-size:9.5px;color:var(--lgray);line-height:1.85;white-space:pre-wrap}
+
+/* Toast */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:9px 16px;
+  font-size:11px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.8px;
+  z-index:999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;max-width:340px}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.ok{border-color:var(--green);color:var(--green)}
+#toast.err{border-color:var(--red);color:var(--red)}
+#toast.warn{border-color:var(--gold);color:var(--gold)}
+#toast.info{border-color:var(--blue);color:var(--blue)}
+.result-panel{display:none;padding-bottom:20px}
+</style>
 </head>
 <body>
 
-    <div class="screen bg-black">
-        
-        <div class="absolute top-5 left-5 right-5 flex justify-between items-center border-b border-gray-800 pb-3">
-            <div>
-                <h1 class="font-bold text-xl text-white">PROPART <span class="text-blue-500">V54</span></h1>
-                <p class="text-[10px] text-gray-500">ESCÁNER UNIVERSAL</p>
-            </div>
-            <div id="connection-dot" class="w-3 h-3 rounded-full bg-red-600 shadow-[0_0_10px_red]"></div>
-        </div>
+<header class="hdr">
+  <div class="hdr-logo">📐</div>
+  <div class="hdr-info">
+    <h1>PROPART ANALIZADOR</h1>
+    <p>DIAGRAMAS + DIAGNÓSTICO POR SONIDO · IA</p>
+  </div>
+  <div class="hdr-badge"><span class="ai-dot"></span>IA</div>
+</header>
 
-        <div id="rpm-gauge" class="gauge-circle mb-6">
-            <div class="text-center">
-                <div id="rpm-val" class="text-6xl font-bold text-white tracking-tighter">0</div>
-                <div class="text-xs text-gray-500 font-bold">RPM MOTOR</div>
-            </div>
-        </div>
+<div class="main">
+<div class="sec">
 
-        <div class="grid grid-cols-2 gap-4 w-full mb-4">
-            <div class="bg-[#111] p-4 rounded-xl border border-gray-800 text-center">
-                <p class="text-[10px] text-gray-500 mb-1">VOLTAJE</p>
-                <p id="volt-val" class="text-xl font-bold text-yellow-500">-- V</p>
-            </div>
-            <div class="bg-[#111] p-4 rounded-xl border border-gray-800 text-center">
-                <p class="text-[10px] text-gray-500 mb-1">PROTOCOLO</p>
-                <p id="proto-val" class="text-xs font-bold text-blue-400">ESPERANDO...</p>
-            </div>
-        </div>
+  <!-- MODE TABS -->
+  <div class="mode-tabs">
+    <div class="mtab on" data-mode="diag" onclick="switchMode('diag')">📐 DIAGRAMAS</div>
+    <div class="mtab" data-mode="audio" onclick="switchMode('audio')">🎙 SONIDO</div>
+  </div>
 
-        <div id="log-box" class="w-full h-24 bg-[#0a0a0a] border border-gray-800 rounded p-2 text-[9px] font-mono text-green-500 overflow-y-auto mb-2 text-left">
-            > Sistema listo. Esperando conexión...
-        </div>
-
-        <button onclick="conectarUniversal()" id="btn-scan" class="btn-connect animate-pulse">
-            <i class="fa-brands fa-bluetooth-b mr-2"></i> BUSCAR DISPOSITIVO
-        </button>
-
+  <!-- API KEY -->
+  <div id="api-key-wrap" style="margin-bottom:9px;background:rgba(30,140,224,.07);border:1px solid rgba(30,140,224,.2);border-radius:11px;padding:10px 12px">
+    <div style="font-family:'Rajdhani',sans-serif;font-size:8px;font-weight:700;letter-spacing:1.5px;color:#6A8CAA;margin-bottom:6px">🔑 API ANTHROPIC (opcional)</div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <input type="password" id="api-key-input" placeholder="sk-ant-api03-..."
+        style="flex:1;background:rgba(0,0,0,.3);border:1px solid rgba(30,140,224,.3);border-radius:7px;padding:8px 10px;font-size:11px;color:#EEF6FF;outline:none;font-family:monospace"
+        oninput="saveApiKey(this.value)"/>
+      <button onclick="toggleKeyVis()" style="background:rgba(30,140,224,.1);border:1px solid rgba(30,140,224,.3);border-radius:7px;padding:8px 10px;color:#6A8CAA;cursor:pointer;font-size:13px">👁</button>
     </div>
+  </div>
 
-    <script>
-        // VARIABLES GLOBALES
-        let deviceCache = null;
-        let serverCache = null;
+</div>
 
-        // UUIDS ESTÁNDAR OBD2
-        const OBD_SERVICE_UUID = '000018f0-0000-1000-8000-00805f9b34fb'; 
-        
-        // UUIDS GENÉRICOS (SERIAL)
-        const SERIAL_SERVICE   = '0000fff0-0000-1000-8000-00805f9b34fb';
+<!-- ═══════════ PANEL DIAGRAMAS ═══════════ -->
+<div id="diag-mode">
+<div class="sec">
+  <div class="veh-sel">
+    <div class="box-title">🚗 SELECCIONA VEHÍCULO</div>
+    <select id="veh-select"><option value="">— Elige un vehículo —</option></select>
+    <div class="veh-info" id="veh-info"></div>
+  </div>
 
-        function log(msg) {
-            const box = document.getElementById('log-box');
-            box.innerHTML += `<div>> ${msg}</div>`;
-            box.scrollTop = box.scrollHeight;
-        }
+  <div class="drop-zone" id="dz">
+    <span class="dz-icon">📐</span>
+    <div class="dz-title">SUBE TU DIAGRAMA (OPCIONAL)</div>
+    <div class="dz-sub">Imagen para análisis con IA · O usa la base de datos</div>
+    <div class="dz-fmts">
+      <span class="fmt" style="color:#1E8CE0;border-color:rgba(30,140,224,.4)">JPG</span>
+      <span class="fmt" style="color:#00C48C;border-color:rgba(0,196,140,.4)">PNG</span>
+      <span class="fmt" style="color:#A855F7;border-color:rgba(168,85,247,.4)">WEBP</span>
+    </div>
+    <input type="file" id="file-input" accept="image/*"/>
+  </div>
+  <div class="prev-wrap" id="prev-wrap">
+    <img id="prev-img" src="" alt="diagrama"/>
+    <label for="file-input" class="prev-overlay"><span class="prev-lbl">📁 CAMBIAR</span></label>
+    <button class="prev-x" id="prev-x">✕</button>
+  </div>
+  <div class="btn-row">
+    <button class="btn-db" id="btn-db" disabled>📊 VER DB</button>
+    <button class="btn-analyze" id="btn-analyze" disabled>🤖 ANALIZAR IA</button>
+  </div>
+  <div class="prog-wrap" id="prog-wrap">
+    <div class="prog-bg"><div class="prog-fill" id="prog-fill"></div></div>
+    <div class="prog-txt" id="prog-txt"></div>
+  </div>
+</div>
 
-        async function conectarUniversal() {
-            try {
-                if (!navigator.bluetooth) {
-                    alert("Tu navegador no soporta Web Bluetooth. Usa Chrome.");
-                    return;
-                }
+<div class="result-panel" id="result-panel">
+<div class="sec">
+  <div class="filter-tabs" id="filter-tabs"></div>
+  <div class="view-tabs">
+    <button class="vtab on" data-mode="schematic">📐 ESQUEMA</button>
+    <button class="vtab" data-mode="colored">⚡ COLOR</button>
+    <button class="vtab" data-mode="xray">🔬 RAYOS X</button>
+  </div>
+  <div class="canvas-wrap" id="canvas-wrap">
+    <canvas id="diag-canvas"></canvas>
+    <canvas id="overlay-canvas"></canvas>
+    <canvas id="hit-canvas"></canvas>
+    <div class="c-badge" id="c-badge">ESQUEMA</div>
+    <div class="c-stats" id="c-stats"></div>
+    <div class="c-hint">📍 Toca un cable</div>
+  </div>
+  <div class="zoom-row">
+    <button class="zbtn" id="z-out">−</button>
+    <span class="zlabel" id="z-label">100%</span>
+    <button class="zbtn" id="z-in">+</button>
+    <button class="zbtn" id="z-fit" style="font-size:13px;font-family:'Rajdhani',sans-serif">↺</button>
+  </div>
+</div>
+<div class="sec">
+  <div class="legend-box">
+    <div class="box-title">⚡ LEYENDA</div>
+    <div class="leg-grid" id="leg-grid"></div>
+  </div>
+</div>
+<div class="sec">
+  <div class="filter-box">
+    <div class="box-title">🔍 BUSCAR</div>
+    <div class="fsearch">
+      <span style="color:var(--lgray)">🔍</span>
+      <input type="text" id="comp-input" placeholder="CKP, TPS, Pin 21..."/>
+      <button onclick="clearSearch()" style="background:none;border:none;cursor:pointer;color:var(--gray);font-size:15px">✕</button>
+    </div>
+    <div class="brow">
+      <button class="bsm blu" id="btn-all">👁 TODOS</button>
+      <button class="bsm pur" id="btn-trace">⚡ TRAZAR</button>
+      <button class="bsm grn" id="btn-export-img">📥 PNG</button>
+    </div>
+  </div>
+</div>
+<div class="sec">
+  <div class="ai-card">
+    <div class="ai-hdr">
+      <span style="font-size:18px">🔌</span>
+      <span class="ai-ttl" id="tbl-title">PINOUT ECU</span>
+    </div>
+    <div class="tbl-scroll">
+    <table class="wtbl" id="wire-tbl">
+      <thead><tr><th></th><th>PIN · SEÑAL</th><th>COLOR</th><th>VOLTAJE</th><th>TIPO</th></tr></thead>
+      <tbody id="wire-tbody"></tbody>
+    </table>
+    </div>
+    <div class="det-pop" id="det-pop">
+      <div class="det-title" id="det-title"></div>
+      <div class="det-body" id="det-body"></div>
+    </div>
+    <div class="report-txt" id="report-txt">Selecciona un vehículo...</div>
+  </div>
+</div>
+<div class="sec">
+  <div class="export-row">
+    <div class="ebtn blue" id="btn-export">📥 GUARDAR PNG</div>
+    <div class="ebtn purple" id="btn-new">🔄 NUEVO</div>
+  </div>
+</div>
+</div><!-- /result-panel -->
+</div><!-- /diag-mode -->
 
-                log("Iniciando escaneo universal...");
+<!-- ═══════════ PANEL DIAGNÓSTICO POR SONIDO ═══════════ -->
+<div class="audio-panel" id="audio-mode">
+<div class="sec">
 
-                // 1. ABRIR VENTANA DE SELECCIÓN
-                deviceCache = await navigator.bluetooth.requestDevice({
-                    acceptAllDevices: true, 
-                    optionalServices: [OBD_SERVICE_UUID, SERIAL_SERVICE]
-                });
+  <div class="mic-zone">
+    <div class="mic-btn" id="mic-btn" onclick="toggleRecording()">
+      <span class="mic-ico" id="mic-ico">🎙</span>
+    </div>
+    <div class="mic-label" id="mic-label">TOCA PARA ESCUCHAR</div>
+    <div class="mic-sub" id="mic-sub">Acerca el teléfono al motor encendido<br>Graba 5-15 segundos para mejor diagnóstico</div>
+    <div class="mic-timer" id="mic-timer">00:00</div>
+  </div>
 
-                log("Seleccionado: " + deviceCache.name);
-                
-                // 2. CONECTARSE
-                log("Conectando al servidor GATT...");
-                serverCache = await deviceCache.gatt.connect();
-                log("¡Conexión establecida!");
+  <!-- Audio Visualization -->
+  <div class="audio-viz" id="audio-viz" style="display:none">
+    <canvas id="wave-canvas"></canvas>
+    <canvas id="spec-canvas"></canvas>
+    <div class="viz-label">ONDA DE AUDIO</div>
+    <div class="viz-label2">ESPECTRO DE FRECUENCIAS</div>
+  </div>
 
-                // ACTUALIZAR UI
-                document.getElementById('connection-dot').className = "w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_#0f0]";
-                document.getElementById('btn-scan').innerText = "DESCONECTAR";
-                document.getElementById('btn-scan').classList.remove('animate-pulse');
-                document.getElementById('btn-scan').style.background = "#333";
-                document.getElementById('btn-scan').setAttribute('onclick', 'window.location.reload()');
-                document.getElementById('rpm-gauge').classList.add('gauge-active');
-                document.getElementById('proto-val').innerText = "BLE 4.0 OK";
+  <!-- Audio Stats -->
+  <div class="audio-stats" id="audio-stats" style="display:none">
+    <div class="astat">
+      <div class="astat-val" id="stat-freq" style="color:var(--cyan)">—</div>
+      <div class="astat-lbl">FREQ DOM (Hz)</div>
+    </div>
+    <div class="astat">
+      <div class="astat-val" id="stat-db" style="color:var(--green)">—</div>
+      <div class="astat-lbl">NIVEL (dB)</div>
+    </div>
+    <div class="astat">
+      <div class="astat-val" id="stat-rpm" style="color:var(--gold)">—</div>
+      <div class="astat-lbl">RPM EST.</div>
+    </div>
+  </div>
 
-                // 3. ACTIVAR MODO VISUAL (CONFIRMACIÓN)
-                log("Iniciando flujo de datos...");
-                startVisualMode();
+  <!-- Diagnosis Results -->
+  <div class="diag-results" id="diag-results"></div>
 
-            } catch (error) {
-                log("ERROR: " + error);
-                if(error.toString().includes("cancelled")) {
-                    alert("No seleccionaste ningún dispositivo de la lista.");
-                } else {
-                    alert("Asegúrate de tener el GPS y Bluetooth encendidos.");
-                }
-            }
-        }
+  <!-- AI Analysis -->
+  <div class="ai-audio-card" id="ai-audio-card">
+    <div class="ai-hdr">
+      <span style="font-size:18px">🤖</span>
+      <span class="ai-ttl">ANÁLISIS IA · DIAGNÓSTICO POR SONIDO</span>
+    </div>
+    <div class="ai-audio-txt" id="ai-audio-txt">Analizando...</div>
+  </div>
 
-        function startVisualMode() {
-            log("Leyendo ECU...");
-            setInterval(() => {
-                let rpm = Math.floor(Math.random() * (850 - 820) + 820);
-                document.getElementById('rpm-val').innerText = rpm;
-                let volt = (Math.random() * (14.1 - 13.8) + 13.8).toFixed(1);
-                document.getElementById('volt-val').innerText = volt + " V";
-            }, 250);
-        }
-    </script>
+  <!-- Sound Guide -->
+  <div class="ai-card" style="margin-top:9px">
+    <div class="ai-hdr">
+      <span style="font-size:16px">📖</span>
+      <span class="ai-ttl">GUÍA DE SONIDOS AUTOMOTRICES</span>
+    </div>
+    <div id="sound-guide"></div>
+  </div>
+
+</div>
+</div><!-- /audio-mode -->
+
+</div><!-- /main -->
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  PROPART · ANALIZADOR DIAGRAMAS + DIAGNÓSTICO POR SONIDO
+//  DATESEG MX · Fernando Millán — 2026
+// ═══════════════════════════════════════════════════════════════
+
+const API = 'https://api.anthropic.com/v1/messages';
+const MDL_KEY = 'pp_api_key';
+const MDL = 'claude-sonnet-4-20250514';
+
+function getApiKey() { return document.getElementById('api-key-input')?.value.trim() || localStorage.getItem(MDL_KEY) || ''; }
+function saveApiKey(k) { if (k) localStorage.setItem(MDL_KEY, k); }
+function toggleKeyVis() { const i=document.getElementById('api-key-input'); i.type=i.type==='password'?'text':'password'; }
+
+// ═══════════════════════════════════════════════════════════════
+//  MODE SWITCHING
+// ═══════════════════════════════════════════════════════════════
+function switchMode(mode) {
+  document.querySelectorAll('.mtab').forEach(t => t.classList.toggle('on', t.dataset.mode === mode));
+  document.getElementById('diag-mode').style.display = mode === 'diag' ? 'block' : 'none';
+  document.getElementById('audio-mode').style.display = mode === 'audio' ? 'block' : 'none';
+  if (mode === 'audio') buildSoundGuide();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  COLOR PALETTES
+// ═══════════════════════════════════════════════════════════════
+const TYPE_COLORS = {
+  'ACT': { hex:'#26C6DA', glow:'#26C6DA55', label:'Actuador', ico:'⚙️' },
+  'SEN': { hex:'#00C853', glow:'#00C85355', label:'Sensor', ico:'📡' },
+  'PWR': { hex:'#FF3B3B', glow:'#FF000066', label:'Alimentación', ico:'🔋' },
+  'GND': { hex:'#607D8B', glow:'#607D8B44', label:'Tierra', ico:'⏚' },
+  'COM': { hex:'#AB47BC', glow:'#AB47BC55', label:'Comunicación', ico:'📶' },
+};
+const VOLT_PALETTE = {
+  '12V':{ hex:'#FF3B3B', label:'12V Batería' }, '5V':{ hex:'#FF8F00', label:'5V Ref' },
+  'GND':{ hex:'#607D8B', label:'Tierra' }, 'CAN-H':{ hex:'#AB47BC', label:'CAN High' },
+  'CAN-L':{ hex:'#7C4DFF', label:'CAN Low' }, 'PWM':{ hex:'#00C853', label:'PWM' },
+  'INJ':{ hex:'#26C6DA', label:'Inyector' }, 'O2':{ hex:'#EC407A', label:'Lambda' },
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  SOUND DIAGNOSTIC CATALOG
+// ═══════════════════════════════════════════════════════════════
+const SOUND_DB = [
+  { id:'knock', name:'Golpeteo / Cascabeleo', ico:'💥', freqRange:[800,3000],
+    priority:'high', color:'var(--red)',
+    desc:'Sonido metálico rítmico que aumenta con RPM. Puede indicar detonación, biela dañada o cojinetes gastados.',
+    causes:['Detonación (usar octanaje correcto)','Biela o cojinetes gastados','Sensor Knock fallando (P0325)','Cadena de distribución estirada'],
+    check:['Verificar código P0325/P0327','Medir presión de aceite en caliente','Escuchar con estetoscopio mecánico en block','Revisar holgura de cadena/banda de distribución'],
+    related:['CKP','Knock sensor','Presión aceite'] },
+  { id:'tick', name:'Tictac / Taqueteo', ico:'🔨', freqRange:[200,800],
+    priority:'med', color:'var(--gold)',
+    desc:'Clic-clic rítmico proporcional a RPM. Generalmente del tren de válvulas — buzos, balancines o inyectores.',
+    causes:['Buzos hidráulicos sin presión','Holgura excesiva en válvulas','Inyectores (sonido normal)','Falta de aceite o aceite viejo'],
+    check:['Verificar nivel y calidad de aceite','Escuchar si desaparece en caliente','Medir holgura de válvulas con calibrador','Separar sonido de inyectores con estetoscopio'],
+    related:['ECT','Presión aceite','IAC'] },
+  { id:'squeal', name:'Chirrido / Rechinido', ico:'🔊', freqRange:[1500,6000],
+    priority:'med', color:'var(--gold)',
+    desc:'Sonido agudo continuo o intermitente. Típico de bandas, poleas o sistema de frenos.',
+    causes:['Banda serpentina gastada o floja','Tensor de banda débil','Polea de alternador o bomba de agua','Balatas de freno gastadas'],
+    check:['Inspeccionar grietas en banda serpentina','Probar tensión con dedo (deflexión 10mm)','Rociar agua en banda — si calla, es la banda','Revisar espesor de balatas (mín 3mm)'],
+    related:['Alternador','Bomba de agua','Sistema de frenos'] },
+  { id:'whine', name:'Zumbido / Lloriqueo', ico:'🎵', freqRange:[500,3000],
+    priority:'med', color:'var(--gold)',
+    desc:'Sonido agudo que sube con RPM. Puede ser alternador, bomba de dirección hidráulica o diferencial.',
+    causes:['Alternador con rodamientos gastados','Bomba de dirección hidráulica baja de fluido','Rodamiento de rueda dañado','Diferencial bajo de aceite'],
+    check:['Medir voltaje de carga (13.5-14.5V)','Verificar nivel de fluido dirección','Girar ruedas a mano — sentir rugosidad','Revisar nivel de aceite diferencial'],
+    related:['Alternador','VSS','Sistema eléctrico'] },
+  { id:'rumble', name:'Retumbo / Vibración', ico:'🌊', freqRange:[30,200],
+    priority:'low', color:'var(--green)',
+    desc:'Vibración profunda o ronroneo áspero. Puede ser escape, soporte de motor o desbalanceo.',
+    causes:['Fuga en sistema de escape','Soporte de motor roto','Bujías fallando (misfire)','Inyector tapado o sin pulso'],
+    check:['Inspeccionar escape visual y auditivo','Acelerar en Drive con freno — ver movimiento motor','Revisar bujías y gap (0.8-1.1mm)','Medir pulso de inyector con noid light'],
+    related:['O2 sensor','CKP','MAF','Bobina encendido'] },
+  { id:'hiss', name:'Silbido / Siseo', ico:'💨', freqRange:[2000,8000],
+    priority:'high', color:'var(--red)',
+    desc:'Silbido continuo del motor. Casi siempre fuga de vacío o fuga de refrigerante bajo presión.',
+    causes:['Fuga de vacío en manguera o colector','Fuga de refrigerante (radiador/manguera)','Empaque de colector de admisión dañado','Válvula PCV rota o manguera agrietada'],
+    check:['Buscar con spray carburador alrededor de colector','Presurizar sistema de enfriamiento','Verificar DTC P0171 (mezcla pobre)','Inspeccionar mangueras de vacío agrietadas'],
+    related:['MAP','MAF','TPS','ECT'] },
+  { id:'grind', name:'Rechinado / Molienda', ico:'⚙️', freqRange:[300,2000],
+    priority:'high', color:'var(--red)',
+    desc:'Sonido áspero de metal contra metal. Urgente — puede ser frenos, transmisión o arrancador.',
+    causes:['Balatas de freno totalmente gastadas','Sincronizadores de transmisión dañados','Arrancador con bendix pegado','Rodamiento de clutch/collarín gastado'],
+    check:['Inspeccionar discos de freno (rayaduras profundas)','Verificar entrada de cambios en frío/caliente','Probar arrancador fuera del motor','Escuchar al pisar/soltar clutch en neutral'],
+    related:['VSS','Sistema de frenos','Transmisión'] },
+  { id:'click_start', name:'Clic al Arrancar', ico:'🔑', freqRange:[50,500],
+    priority:'high', color:'var(--red)',
+    desc:'Clic-clic-clic al girar llave sin que arranque. Batería baja, marcha o conexiones flojas.',
+    causes:['Batería descargada o muerta','Terminales de batería sulfatados','Motor de arranque (marcha) dañado','Relé de arranque fallando'],
+    check:['Medir voltaje batería (mín 12.4V)','Limpiar terminales con bicarbonato','Golpear marcha suavemente y reintentar','Puentear relé de arranque para probar'],
+    related:['Batería','Alternador','Sistema arranque'] },
+];
+
+// ═══════════════════════════════════════════════════════════════
+//  VEHICLE DATABASE
+// ═══════════════════════════════════════════════════════════════
+const DB = { vehicles: {
+  'nissan_sentra_b14': {
+    brand:'NISSAN', model:'SENTRA B14', version:'1995-1999', engine:'GA16DE 1.6L',
+    ecu:'ECM Nissan GA16DE · 76 Pines', pines:76, fuel:'Gasolina',
+    sistema:'Inyección MPFI — Control de Motor',
+    descripcion:'ECU Hitachi 76 pines. 4 inyectores, bobinas, IAC, sensor CAS óptico. Muy popular en México.',
+    pinout:[
+      {p:1,  s:'Bobina Cil.1',    c:'Rojo/Negro',    h:'#CC2222',col2:'#111',    v:'0-12V pulso',      t:'ACT', dest:'Bobina cil.1 via F4 15A'},
+      {p:2,  s:'Bobina Cil.2',    c:'Rojo/Azul',     h:'#CC2222',col2:'#1155CC', v:'0-12V pulso',      t:'ACT', dest:'Bobina cil.2'},
+      {p:3,  s:'Bobina Cil.3',    c:'Rojo/Blanco',   h:'#CC2222',col2:'#EEE',    v:'0-12V pulso',      t:'ACT', dest:'Bobina cil.3'},
+      {p:4,  s:'Bobina Cil.4',    c:'Rojo/Verde',    h:'#CC2222',col2:'#228822', v:'0-12V pulso',      t:'ACT', dest:'Bobina cil.4'},
+      {p:11, s:'Inyector Cil.1',   c:'Azul/Rojo',     h:'#1155CC',col2:'#CC2222', v:'0-12V pulso',      t:'ACT', dest:'Inyector cil.1 via F2 15A'},
+      {p:12, s:'Inyector Cil.2',   c:'Azul/Blanco',   h:'#1155CC',col2:'#EEE',    v:'0-12V pulso',      t:'ACT', dest:'Inyector cil.2'},
+      {p:13, s:'Inyector Cil.3',   c:'Azul/Negro',    h:'#1155CC',col2:'#111',    v:'0-12V pulso',      t:'ACT', dest:'Inyector cil.3'},
+      {p:14, s:'Inyector Cil.4',   c:'Azul/Verde',    h:'#1155CC',col2:'#228822', v:'0-12V pulso',      t:'ACT', dest:'Inyector cil.4'},
+      {p:21, s:'CAS señal 1°',     c:'Verde/Negro',   h:'#228822',col2:'#111',    v:'0-5V AC',          t:'SEN', dest:'Distribuidor óptico'},
+      {p:22, s:'CAS señal 180°',   c:'Verde/Blanco',  h:'#228822',col2:'#EEE',    v:'0-5V AC',          t:'SEN', dest:'Distribución 180°'},
+      {p:31, s:'MAF señal',        c:'Amarillo/Negro', h:'#DDCC00',col2:'#111',   v:'1.0-5.0V',         t:'SEN', dest:'Flujo aire g/s'},
+      {p:32, s:'MAF 12V',          c:'Blanco/Rojo',   h:'#EEEEEE',col2:'#CC2222', v:'12V',              t:'PWR', dest:'Relé principal via F3'},
+      {p:33, s:'Tierra MAF',       c:'Negro',         h:'#222222',col2:'#222',    v:'0V',               t:'GND', dest:'Tierra MAF'},
+      {p:41, s:'TPS señal',        c:'Verde/Rojo',    h:'#228822',col2:'#CC2222', v:'0.5-4.5V',         t:'SEN', dest:'Posición mariposa'},
+      {p:42, s:'VREF TPS 5V',      c:'Gris/Rojo',     h:'#888888',col2:'#CC2222', v:'5V ref',           t:'PWR', dest:'Vref ECU'},
+      {p:43, s:'Tierra TPS',       c:'Negro/Blanco',  h:'#222222',col2:'#EEE',    v:'0V',               t:'GND', dest:'Tierra TPS'},
+      {p:44, s:'ECT señal',        c:'Verde/Azul',    h:'#228833',col2:'#1155CC', v:'NTC 0.3-4.8V',     t:'SEN', dest:'Temp motor NTC'},
+      {p:45, s:'Sonda O2 B1S1',    c:'Azul/Amarillo', h:'#1155CC',col2:'#DDCC00', v:'0.1-0.9V',         t:'SEN', dest:'Lambda via F6'},
+      {p:51, s:'VREF 5V sensores', c:'Gris',          h:'#888888',col2:'#888',    v:'5V exacto',        t:'PWR', dest:'Vref MAP/ECT/TPS'},
+      {p:52, s:'Tierra señal',     c:'Negro/Azul',    h:'#222222',col2:'#1155CC', v:'0V limpio',        t:'GND', dest:'Masa sensores'},
+      {p:53, s:'IAC control',      c:'Naranja/Blanco',h:'#DD7722',col2:'#EEE',    v:'PWM 30-55Hz',      t:'ACT', dest:'Ralentí via F7'},
+      {p:61, s:'Relé bomba',       c:'Negro/Amarillo',h:'#222222',col2:'#DDCC00', v:'0V/12V',           t:'ACT', dest:'Relé bomba R2'},
+      {p:62, s:'Alim. IGN ON',     c:'Rojo/Amarillo', h:'#CC4422',col2:'#DDCC00', v:'12V llave',        t:'PWR', dest:'Ignición via F1'},
+      {p:63, s:'Tierra chasis',    c:'Negro',         h:'#222222',col2:'#222',    v:'0V',               t:'GND', dest:'Tierra potencia'},
+      {p:64, s:'Batería ECM',      c:'Blanco',        h:'#EEEEEE',col2:'#EEE',    v:'12V const',        t:'PWR', dest:'Memoria via F1'},
+      {p:71, s:'VSS velocidad',    c:'Verde/Amarillo',h:'#228822',col2:'#DDCC00', v:'0-12V pulso',      t:'SEN', dest:'Velocidad'},
+      {p:72, s:'K-Line diag',      c:'Azul/Verde',    h:'#1155CC',col2:'#228822', v:'K-Line',           t:'COM', dest:'OBD-II'},
+      {p:73, s:'Knock sensor',     c:'Gris/Azul',     h:'#888888',col2:'#1155CC', v:'AC mV',            t:'SEN', dest:'Detonación'},
+      {p:74, s:'Check Engine',     c:'Naranja',       h:'#DD7722',col2:'#DD7722', v:'0V activa',        t:'ACT', dest:'MIL tablero'},
+      {p:76, s:'IACV feedback',    c:'Naranja/Negro', h:'#DD7722',col2:'#111',    v:'0-5V',             t:'SEN', dest:'Posición IAC'},
+    ],
+    notas:['CAS óptico en distribuidor — limpia disco','TPS lineal sin saltos','O2 oscilar rápido en caliente','IAC 20-30Ω bobinas','VREF <4.8V = cortocircuito arnés'],
+    fallas:['P0335 — CKP: Pin 21/22 continuidad','P0171 — Pobre: O2 Pin45, MAF Pin31','P0120 — TPS: Pin41/42/43','P0505 — IAC: Pin53 PWM','P0325 — Knock: Pin73 torque 20Nm']
+  },
+  'nissan_tsuru_b13': {
+    brand:'NISSAN', model:'TSURU B13', version:'1992-2017', engine:'GA16DNE 1.6L',
+    ecu:'ECM Hitachi · 48 Pines', pines:48, fuel:'Gasolina',
+    sistema:'MPFI Simplificada', descripcion:'ECU 48 pines Tsuru III. El más vendido en México.',
+    pinout:[
+      {p:1,  s:'Alim +B const',    c:'Blanco/Rojo',   h:'#EEEEEE',col2:'#CC2222', v:'12V bat',    t:'PWR', dest:'Fusible 10A'},
+      {p:2,  s:'Alim IGN ON',      c:'Negro/Blanco',  h:'#222222',col2:'#EEE',    v:'12V llave',  t:'PWR', dest:'Switch ignición'},
+      {p:3,  s:'Tierra ECM',       c:'Negro',         h:'#222222',col2:'#222',    v:'0V',         t:'GND', dest:'Block motor'},
+      {p:10, s:'CKP (CAS) señal',  c:'Verde/Negro',   h:'#228822',col2:'#111',    v:'0-5V cuad',  t:'SEN', dest:'Sensor óptico distrib'},
+      {p:11, s:'CMP referencia',   c:'Verde/Blanco',  h:'#228822',col2:'#EEE',    v:'0-5V cuad',  t:'SEN', dest:'PMS distribuidor'},
+      {p:15, s:'TPS señal',        c:'Verde/Rojo',    h:'#228822',col2:'#CC2222', v:'0.5-4.5V',   t:'SEN', dest:'Mariposa'},
+      {p:16, s:'VREF 5V',          c:'Gris',          h:'#888888',col2:'#888',    v:'5.0V',       t:'PWR', dest:'VREF TPS/ECT'},
+      {p:17, s:'Tierra señal',     c:'Negro/Azul',    h:'#222222',col2:'#1155CC', v:'0V',         t:'GND', dest:'Masa sensores'},
+      {p:20, s:'ECT señal',        c:'Verde/Azul',    h:'#228833',col2:'#1155CC', v:'NTC 0.3-4.8V',t:'SEN', dest:'Temp motor'},
+      {p:25, s:'Inyectores 1-4',   c:'Azul',          h:'#1155CC',col2:'#1155CC', v:'12V pulso',  t:'ACT', dest:'4 inj simultáneo'},
+      {p:30, s:'Bobina ignición',  c:'Rojo/Negro',    h:'#CC2222',col2:'#111',    v:'0-12V',      t:'ACT', dest:'Módulo DIS'},
+      {p:35, s:'IAC control',      c:'Naranja',       h:'#DD7722',col2:'#DD7722', v:'PWM',        t:'ACT', dest:'Válvula ralentí'},
+      {p:38, s:'Sonda O2',         c:'Azul/Amarillo', h:'#1155CC',col2:'#DDCC00', v:'0.1-0.9V',   t:'SEN', dest:'Lambda B1S1'},
+      {p:40, s:'Relé bomba',       c:'Negro/Amarillo',h:'#222222',col2:'#DDCC00', v:'0V activa',  t:'ACT', dest:'Relé bomba'},
+      {p:42, s:'Check Engine',     c:'Verde/Rojo',    h:'#228833',col2:'#CC2222', v:'0V enciende',t:'ACT', dest:'Tablero'},
+      {p:45, s:'VSS velocidad',    c:'Verde/Amarillo',h:'#228822',col2:'#DDCC00', v:'0-12V',      t:'SEN', dest:'Velocidad'},
+      {p:48, s:'K-Line diag',      c:'Azul/Verde',    h:'#1155CC',col2:'#228822', v:'K-Line',     t:'COM', dest:'Consult OBD-I'},
+    ],
+    notas:['Inyección simultánea (4 al mismo tiempo)','CAS óptico: sin señal = no arranca','ECT: frío alto V, caliente bajo V'],
+    fallas:['P0335 — CAS: limpiar disco óptico Pin 10','P0120 — TPS: Pin15/16/17','P0505 — IAC: Pin35 limpiar']
+  },
+  'vw_golf_a4': {
+    brand:'VOLKSWAGEN', model:'GOLF A4', version:'2001-2006', engine:'2.0L 8V',
+    ecu:'Motronic ME7.5 · 121 Pines', pines:121, fuel:'Gasolina',
+    sistema:'Motronic ME7.5', descripcion:'Bosch ME7.5, 121 pines. IMMO WFS III integrado.',
+    pinout:[
+      {p:1,  s:'Corriente +30',    c:'Rojo/Negro',    h:'#CC2222',col2:'#111',    v:'12.6V',      t:'PWR', dest:'Batería directa'},
+      {p:2,  s:'Tierra potencia',  c:'Café',          h:'#6D4C41',col2:'#6D4C41', v:'0V',         t:'GND', dest:'Masa motor'},
+      {p:3,  s:'Tierra señales',   c:'Café/Blanco',   h:'#6D4C41',col2:'#EEE',    v:'0V',         t:'GND', dest:'Masa referencia'},
+      {p:10, s:'CKP señal',        c:'Verde/Negro',   h:'#228822',col2:'#111',    v:'AC 0.5-100V', t:'SEN', dest:'Cigüeñal 60-2'},
+      {p:15, s:'CMP Hall',         c:'Gris/Azul',     h:'#888888',col2:'#1155CC', v:'0-5V Hall',  t:'SEN', dest:'Árbol de levas'},
+      {p:20, s:'TPS señal',        c:'Amarillo/Verde',h:'#DDCC00',col2:'#228822', v:'0.5-4.5V',   t:'SEN', dest:'Mariposa'},
+      {p:21, s:'VREF 5V',          c:'Gris',          h:'#888888',col2:'#888',    v:'5.0V',       t:'PWR', dest:'Alim sensores'},
+      {p:25, s:'ECT señal',        c:'Verde/Café',    h:'#228833',col2:'#6D4C41', v:'NTC',        t:'SEN', dest:'Temp motor'},
+      {p:30, s:'MAF señal',        c:'Amarillo',      h:'#DDCC00',col2:'#DDCC00', v:'0.5-4.8V',   t:'SEN', dest:'Flujo aire'},
+      {p:40, s:'O2 upstream',      c:'Negro/Violeta', h:'#222222',col2:'#AB47BC', v:'0.1-0.9V',   t:'SEN', dest:'Lambda B1S1'},
+      {p:50, s:'Inyector Cil.1',   c:'Azul/Blanco',   h:'#1155CC',col2:'#EEE',    v:'12V pulso',  t:'ACT', dest:'Inyector cil.1'},
+      {p:51, s:'Inyector Cil.2',   c:'Azul/Rojo',     h:'#1155CC',col2:'#CC2222', v:'12V pulso',  t:'ACT', dest:'Inyector cil.2'},
+      {p:52, s:'Inyector Cil.3',   c:'Azul/Verde',    h:'#1155CC',col2:'#228822', v:'12V pulso',  t:'ACT', dest:'Inyector cil.3'},
+      {p:53, s:'Inyector Cil.4',   c:'Azul/Amarillo', h:'#1155CC',col2:'#DDCC00', v:'12V pulso',  t:'ACT', dest:'Inyector cil.4'},
+      {p:60, s:'Bobina 1-4 DIS',   c:'Rojo/Blanco',   h:'#CC2222',col2:'#EEE',    v:'0-400V',     t:'ACT', dest:'Bobina DIS'},
+      {p:70, s:'IAC motor paso',   c:'Naranja',       h:'#DD7722',col2:'#DD7722', v:'PWM 200Hz',  t:'ACT', dest:'Ralentí'},
+      {p:90, s:'Check Engine',     c:'Verde/Rojo',    h:'#228833',col2:'#CC2222', v:'0V enciende',t:'ACT', dest:'MIL tablero'},
+      {p:110,s:'CAN High',         c:'Naranja/Negro', h:'#DD7722',col2:'#111',    v:'2.5-3.5V',   t:'COM', dest:'CAN gateway'},
+      {p:111,s:'CAN Low',          c:'Naranja/Café',  h:'#DD7722',col2:'#6D4C41', v:'1.5-2.5V',   t:'COM', dest:'CAN gateway'},
+      {p:120,s:'IMMO WFS III',     c:'Violeta/Blanco',h:'#AB47BC',col2:'#EEE',    v:'Datos serial',t:'COM', dest:'Tablero IMMO'},
+    ],
+    notas:['CKP inductivo 60-2 — amplitud proporcional a RPM','ME7.5 codificación con VCDS','IMMO WFS III: sin llave NO inyecta'],
+    fallas:['P0322 — CKP: gap 0.8-1mm, R 800-1000Ω','P0341 — CMP: Hall 5V','P0300 — Misfire: bobinas DIS','P0171 — Pobre: MAF sucio']
+  },
+  'chevy_aveo': {
+    brand:'CHEVROLET', model:'AVEO', version:'2006-2011', engine:'1.6L F16D3',
+    ecu:'Delphi MT80 · 80 Pines', pines:80, fuel:'Gasolina',
+    sistema:'Inyección Secuencial Delphi', descripcion:'Delphi MT80, CAN Bus con BCM.',
+    pinout:[
+      {p:1,  s:'Alim +30',         c:'Rojo',          h:'#CC2222',col2:'#CC2222', v:'12V const',  t:'PWR', dest:'Batería'},
+      {p:2,  s:'Tierra potencia',  c:'Negro',         h:'#222222',col2:'#222',    v:'0V',         t:'GND', dest:'Block motor'},
+      {p:10, s:'CKP señal',        c:'Azul/Blanco',   h:'#1155CC',col2:'#EEE',    v:'AC 0.3-50V', t:'SEN', dest:'Cigüeñal 58-2'},
+      {p:15, s:'CMP Hall',         c:'Gris/Negro',    h:'#888888',col2:'#111',    v:'0-5V Hall',  t:'SEN', dest:'Árbol levas'},
+      {p:20, s:'TPS señal',        c:'Amarillo',      h:'#DDCC00',col2:'#DDCC00', v:'0.5-4.5V',   t:'SEN', dest:'Mariposa'},
+      {p:21, s:'MAP señal',        c:'Verde',         h:'#228822',col2:'#228822', v:'1.0-4.5V',   t:'SEN', dest:'Presión colector'},
+      {p:22, s:'ECT señal',        c:'Verde/Amarillo',h:'#228833',col2:'#DDCC00', v:'NTC',        t:'SEN', dest:'Temp motor'},
+      {p:25, s:'O2 upstream',      c:'Violeta',       h:'#AB47BC',col2:'#AB47BC', v:'0.1-0.9V',   t:'SEN', dest:'Lambda B1S1'},
+      {p:30, s:'VREF 5V',          c:'Gris',          h:'#888888',col2:'#888',    v:'5.0V',       t:'PWR', dest:'VREF TPS/MAP'},
+      {p:32, s:'Tierra señal',     c:'Negro/Azul',    h:'#222222',col2:'#1155CC', v:'0V',         t:'GND', dest:'Masa sensores'},
+      {p:40, s:'Inyector Cil.1',   c:'Azul/Rojo',     h:'#1155CC',col2:'#CC2222', v:'12V pulso',  t:'ACT', dest:'Inyector cil.1'},
+      {p:41, s:'Inyector Cil.2',   c:'Azul/Blanco',   h:'#1155CC',col2:'#EEE',    v:'12V pulso',  t:'ACT', dest:'Inyector cil.2'},
+      {p:42, s:'Inyector Cil.3',   c:'Azul/Verde',    h:'#1155CC',col2:'#228822', v:'12V pulso',  t:'ACT', dest:'Inyector cil.3'},
+      {p:43, s:'Inyector Cil.4',   c:'Azul/Amarillo', h:'#1155CC',col2:'#DDCC00', v:'12V pulso',  t:'ACT', dest:'Inyector cil.4'},
+      {p:50, s:'Bobina COP 1-4',   c:'Rojo/Blanco',   h:'#CC2222',col2:'#EEE',    v:'0-12V',      t:'ACT', dest:'COP bobina'},
+      {p:55, s:'IAC paso a paso',  c:'Naranja',       h:'#DD7722',col2:'#DD7722', v:'PWM bipolar',t:'ACT', dest:'Ralentí'},
+      {p:65, s:'CAN High',         c:'Naranja/Negro', h:'#DD7722',col2:'#111',    v:'2.5-3.5V',   t:'COM', dest:'CAN BCM'},
+      {p:66, s:'CAN Low',          c:'Naranja/Café',  h:'#DD7722',col2:'#6D4C41', v:'1.5-2.5V',   t:'COM', dest:'CAN BCM'},
+      {p:70, s:'Check Engine',     c:'Verde/Rojo',    h:'#228833',col2:'#CC2222', v:'0V enciende',t:'ACT', dest:'Tablero'},
+      {p:75, s:'Knock sensor',     c:'Gris/Azul',     h:'#888888',col2:'#1155CC', v:'AC mV',      t:'SEN', dest:'Detonación'},
+      {p:80, s:'Alim IGN',         c:'Rojo/Blanco',   h:'#CC2222',col2:'#EEE',    v:'12V llave',  t:'PWR', dest:'Ignición ON'},
+    ],
+    notas:['CKP inductivo 58-2 — gap 0.5-1.0mm — R 500-700Ω','MAP ralentí 1.0-1.5V, WOT 4.0-4.5V'],
+    fallas:['P0335 — CKP: R y gap Pin10/11','P0107 — MAP bajo: Pin21, vacío, 5V ref','P0300 — Misfire: COP, bujías']
+  },
+}};
+
+// ═══════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════
+const S = {
+  imgData:null, imgMime:'image/jpeg', imgEl:null,
+  result:null, wires:[], activeFilter:'ALL',
+  viewMode:'schematic', zoom:1, canW:0, canH:0,
+  selectedVeh:null, source:null
+};
+
+// Audio state
+const AUD = {
+  ctx:null, analyser:null, stream:null, source:null,
+  recording:false, startTime:0, timerInt:null,
+  freqData:null, timeData:null, animFrame:null,
+  history:[], peakFreq:0, avgDb:0, estRPM:0
+};
+
+const canDiag=document.getElementById('diag-canvas');
+const canOverlay=document.getElementById('overlay-canvas');
+const canHit=document.getElementById('hit-canvas');
+const cx=canDiag.getContext('2d');
+const cx2=canOverlay.getContext('2d');
+const cx3=canHit.getContext('2d');
+
+// ═══════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════
+addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem(MDL_KEY);
+  if (saved) document.getElementById('api-key-input').value = saved;
+  populateVehicles(); initDrop(); initViewTabs(); initZoom(); initFilters(); renderLegend();
+  // Resize audio canvases
+  const wc = document.getElementById('wave-canvas');
+  const sc = document.getElementById('spec-canvas');
+  if (wc) { wc.width = wc.parentElement.clientWidth || 480; wc.height = 80; }
+  if (sc) { sc.width = sc.parentElement.clientWidth || 480; sc.height = 100; }
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  AUDIO DIAGNOSTIC ENGINE
+// ═══════════════════════════════════════════════════════════════
+async function toggleRecording() {
+  if (AUD.recording) { stopRecording(); return; }
+  try {
+    AUD.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:false }});
+    AUD.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    AUD.analyser = AUD.ctx.createAnalyser();
+    AUD.analyser.fftSize = 2048;
+    AUD.analyser.smoothingTimeConstant = 0.8;
+    AUD.source = AUD.ctx.createMediaStreamSource(AUD.stream);
+    AUD.source.connect(AUD.analyser);
+
+    AUD.freqData = new Uint8Array(AUD.analyser.frequencyBinCount);
+    AUD.timeData = new Uint8Array(AUD.analyser.fftSize);
+    AUD.history = [];
+    AUD.recording = true;
+    AUD.startTime = Date.now();
+
+    const btn = document.getElementById('mic-btn');
+    btn.classList.add('recording');
+    document.getElementById('mic-ico').textContent = '⏹';
+    document.getElementById('mic-label').textContent = 'GRABANDO...';
+    document.getElementById('mic-sub').textContent = 'Acerca al motor · Toca para detener';
+    document.getElementById('mic-timer').classList.add('rec');
+    document.getElementById('audio-viz').style.display = 'block';
+    document.getElementById('audio-stats').style.display = 'grid';
+    document.getElementById('diag-results').style.display = 'none';
+    document.getElementById('ai-audio-card').style.display = 'none';
+
+    // Resize canvases now that visible
+    const wc = document.getElementById('wave-canvas');
+    const sc = document.getElementById('spec-canvas');
+    wc.width = wc.parentElement.clientWidth; wc.height = 80;
+    sc.width = sc.parentElement.clientWidth; sc.height = 100;
+
+    AUD.timerInt = setInterval(updateTimer, 100);
+    drawAudio();
+    toast('🎙 Grabando sonido...', 'info');
+
+  } catch(err) {
+    toast('❌ No se pudo acceder al micrófono', 'err', 4000);
+  }
+}
+
+function stopRecording() {
+  AUD.recording = false;
+  if (AUD.stream) AUD.stream.getTracks().forEach(t => t.stop());
+  if (AUD.ctx) AUD.ctx.close();
+  clearInterval(AUD.timerInt);
+  cancelAnimationFrame(AUD.animFrame);
+
+  const btn = document.getElementById('mic-btn');
+  btn.classList.remove('recording');
+  btn.classList.add('analyzing');
+  document.getElementById('mic-ico').textContent = '🔍';
+  document.getElementById('mic-label').textContent = 'ANALIZANDO...';
+  document.getElementById('mic-sub').textContent = 'Procesando patrones de sonido...';
+  document.getElementById('mic-timer').classList.remove('rec');
+
+  setTimeout(() => {
+    analyzeAudio();
+    btn.classList.remove('analyzing');
+    document.getElementById('mic-ico').textContent = '🎙';
+    document.getElementById('mic-label').textContent = 'TOCA PARA ESCUCHAR DE NUEVO';
+    document.getElementById('mic-sub').textContent = 'Resultado del diagnóstico abajo';
+  }, 800);
+}
+
+function updateTimer() {
+  const elapsed = Math.floor((Date.now() - AUD.startTime) / 1000);
+  const m = String(Math.floor(elapsed/60)).padStart(2,'0');
+  const s = String(elapsed%60).padStart(2,'0');
+  document.getElementById('mic-timer').textContent = `${m}:${s}`;
+}
+
+function drawAudio() {
+  if (!AUD.recording) return;
+  AUD.animFrame = requestAnimationFrame(drawAudio);
+
+  AUD.analyser.getByteTimeDomainData(AUD.timeData);
+  AUD.analyser.getByteFrequencyData(AUD.freqData);
+
+  const wc = document.getElementById('wave-canvas');
+  const sc = document.getElementById('spec-canvas');
+  const wctx = wc.getContext('2d');
+  const sctx = sc.getContext('2d');
+  const W = wc.width, WH = wc.height;
+  const SW = sc.width, SH = sc.height;
+
+  // ── Waveform ──
+  wctx.fillStyle = 'rgba(5,11,20,0.3)';
+  wctx.fillRect(0,0,W,WH);
+  wctx.strokeStyle = '#00D4E8';
+  wctx.lineWidth = 1.5;
+  wctx.shadowColor = '#00D4E855';
+  wctx.shadowBlur = 4;
+  wctx.beginPath();
+  const sliceW = W / AUD.timeData.length;
+  for (let i=0; i<AUD.timeData.length; i++) {
+    const v = AUD.timeData[i] / 128.0;
+    const y = v * WH/2;
+    if (i===0) wctx.moveTo(0,y); else wctx.lineTo(i*sliceW, y);
+  }
+  wctx.stroke();
+  wctx.shadowBlur = 0;
+
+  // ── Spectrum ──
+  sctx.fillStyle = 'rgba(5,11,20,0.25)';
+  sctx.fillRect(0,0,SW,SH);
+  const barW = SW / (AUD.freqData.length * 0.25); // show lower half
+  const barsToShow = Math.floor(AUD.freqData.length * 0.25);
+  for (let i=0; i<barsToShow; i++) {
+    const val = AUD.freqData[i];
+    const pct = val / 255;
+    const h = pct * SH;
+    // Color gradient based on frequency
+    const hue = (i/barsToShow) * 280;
+    sctx.fillStyle = `hsla(${hue}, 80%, 55%, ${0.4 + pct*0.6})`;
+    sctx.shadowColor = `hsla(${hue}, 80%, 55%, 0.3)`;
+    sctx.shadowBlur = 3;
+    sctx.fillRect(i*barW, SH-h, barW-1, h);
+  }
+  sctx.shadowBlur = 0;
+
+  // ── Live stats ──
+  // Find peak frequency
+  let maxVal = 0, maxIdx = 0;
+  for (let i=1; i<AUD.freqData.length/2; i++) {
+    if (AUD.freqData[i] > maxVal) { maxVal = AUD.freqData[i]; maxIdx = i; }
+  }
+  const nyquist = AUD.ctx.sampleRate / 2;
+  const peakHz = Math.round(maxIdx * nyquist / AUD.analyser.frequencyBinCount);
+
+  // Average dB
+  let sum = 0;
+  for (let i=0; i<AUD.freqData.length; i++) sum += AUD.freqData[i];
+  const avgLevel = sum / AUD.freqData.length;
+  const db = Math.round(20 * Math.log10(avgLevel / 255 + 0.0001) + 90);
+
+  // Estimate RPM from low freq peaks (engine fires are 30-150Hz range)
+  let lowMax = 0, lowIdx = 0;
+  const maxBin = Math.floor(200 * AUD.analyser.frequencyBinCount / nyquist);
+  const minBin = Math.floor(20 * AUD.analyser.frequencyBinCount / nyquist);
+  for (let i=minBin; i<maxBin; i++) {
+    if (AUD.freqData[i] > lowMax) { lowMax = AUD.freqData[i]; lowIdx = i; }
+  }
+  const lowHz = lowIdx * nyquist / AUD.analyser.frequencyBinCount;
+  const estRPM = Math.round(lowHz * 60 / 2); // 4-stroke: 2 revs per firing
+
+  AUD.peakFreq = peakHz;
+  AUD.avgDb = db;
+  AUD.estRPM = Math.max(0, Math.min(8000, estRPM));
+
+  document.getElementById('stat-freq').textContent = peakHz;
+  document.getElementById('stat-db').textContent = db;
+  document.getElementById('stat-db').style.color = db > 75 ? 'var(--red)' : db > 55 ? 'var(--gold)' : 'var(--green)';
+  document.getElementById('stat-rpm').textContent = estRPM > 200 ? estRPM : '—';
+
+  // Save history for analysis
+  AUD.history.push({ peakHz, db, estRPM, freqs: Array.from(AUD.freqData.slice(0, barsToShow)) });
+  if (AUD.history.length > 200) AUD.history.shift(); // keep last ~20s
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  AUDIO ANALYSIS
+// ═══════════════════════════════════════════════════════════════
+function analyzeAudio() {
+  if (!AUD.history.length) { toast('No hay datos de audio', 'warn'); return; }
+
+  // Calculate averages
+  const avgFreq = Math.round(AUD.history.reduce((s,h) => s+h.peakHz, 0) / AUD.history.length);
+  const avgDb = Math.round(AUD.history.reduce((s,h) => s+h.db, 0) / AUD.history.length);
+  const avgRPM = Math.round(AUD.history.reduce((s,h) => s+h.estRPM, 0) / AUD.history.length);
+
+  // Frequency band analysis
+  const bands = { low:0, mid:0, high:0, vhigh:0 };
+  AUD.history.forEach(h => {
+    h.freqs.forEach((v,i) => {
+      const hz = i * (48000/2) / 1024;  // approximate
+      if (hz < 300) bands.low += v;
+      else if (hz < 1500) bands.mid += v;
+      else if (hz < 4000) bands.high += v;
+      else bands.vhigh += v;
+    });
+  });
+  const total = bands.low + bands.mid + bands.high + bands.vhigh + 1;
+  const pcts = {
+    low: bands.low/total,
+    mid: bands.mid/total,
+    high: bands.high/total,
+    vhigh: bands.vhigh/total
+  };
+
+  // Score each diagnostic pattern
+  const scores = SOUND_DB.map(snd => {
+    let score = 0;
+    const [fLow, fHigh] = snd.freqRange;
+
+    // Frequency match
+    if (avgFreq >= fLow && avgFreq <= fHigh) score += 40;
+    else if (avgFreq >= fLow*0.5 && avgFreq <= fHigh*1.5) score += 15;
+
+    // Band energy match
+    if (fHigh <= 500 && pcts.low > 0.35) score += 25;
+    if (fLow >= 200 && fHigh <= 2000 && pcts.mid > 0.3) score += 20;
+    if (fLow >= 1000 && pcts.high > 0.3) score += 25;
+    if (fLow >= 2000 && pcts.vhigh > 0.25) score += 25;
+
+    // Volume hints
+    if (snd.id === 'grind' && avgDb > 65) score += 15;
+    if (snd.id === 'hiss' && avgDb < 50 && pcts.vhigh > 0.2) score += 15;
+    if (snd.id === 'rumble' && avgDb > 50 && pcts.low > 0.4) score += 20;
+    if (snd.id === 'click_start' && avgDb < 45) score += 10;
+    if (snd.id === 'squeal' && pcts.high > 0.35) score += 20;
+    if (snd.id === 'whine' && pcts.mid > 0.3 && pcts.high > 0.2) score += 15;
+    if (snd.id === 'knock' && pcts.mid > 0.25 && avgDb > 55) score += 15;
+    if (snd.id === 'tick' && pcts.mid > 0.3) score += 15;
+
+    return { ...snd, score: Math.min(score, 95) };
+  });
+
+  scores.sort((a,b) => b.score - a.score);
+
+  // Show results
+  const container = document.getElementById('diag-results');
+  container.style.display = 'block';
+  container.innerHTML = `
+    <div class="box-title" style="margin-bottom:10px">🔍 RESULTADOS DEL DIAGNÓSTICO</div>
+    <div style="font-size:8px;color:var(--lgray);margin-bottom:10px;font-family:'Share Tech Mono',monospace">
+      Freq. dominante: ${avgFreq}Hz · Nivel: ${avgDb}dB · RPM est: ${avgRPM > 200 ? avgRPM : '—'}
+    </div>
+  `;
+
+  // Show top 4 matches
+  scores.slice(0,4).forEach(s => {
+    if (s.score < 10) return;
+    const prio = s.score > 50 ? 'high' : s.score > 25 ? 'med' : 'low';
+    const probLabel = s.score > 50 ? 'PROBABLE' : s.score > 25 ? 'POSIBLE' : 'BAJO';
+    const card = document.createElement('div');
+    card.className = `diag-card ${prio}`;
+    card.innerHTML = `
+      <div class="diag-hdr">
+        <span class="diag-ico">${s.ico}</span>
+        <span class="diag-name">${s.name}</span>
+        <span class="diag-prob" style="color:${s.color}">${s.score}% ${probLabel}</span>
+      </div>
+      <div class="diag-body">
+        ${s.desc}<br><br>
+        <b>Causas posibles:</b><br>
+        ${s.causes.map(c => '• ' + c).join('<br>')}<br><br>
+        <b>Qué revisar:</b><br>
+        ${s.check.map(c => '• ' + c).join('<br>')}
+      </div>
+      <div class="diag-tags">
+        ${s.related.map(r => `<span class="diag-tag">${r}</span>`).join('')}
+        <span class="diag-tag red">${s.freqRange[0]}-${s.freqRange[1]}Hz</span>
+      </div>`;
+    container.appendChild(card);
+  });
+
+  toast('✅ Diagnóstico por sonido completo', 'ok', 4000);
+
+  // If API key, send to Claude for deeper analysis
+  const key = getApiKey();
+  if (key) sendAudioToIA(avgFreq, avgDb, avgRPM, pcts, scores.slice(0,3));
+}
+
+async function sendAudioToIA(freq, db, rpm, bands, topMatches) {
+  const card = document.getElementById('ai-audio-card');
+  card.style.display = 'block';
+  document.getElementById('ai-audio-txt').textContent = '🤖 Analizando con IA...';
+
+  const veh = S.selectedVeh ? DB.vehicles[S.selectedVeh] : null;
+  const vehInfo = veh ? `${veh.brand} ${veh.model} ${veh.engine} (${veh.version})` : 'Vehículo no especificado';
+
+  const prompt = `Eres un técnico mecánico automotriz experto con 20 años de experiencia diagnosticando fallas por sonido.
+
+DATOS DE AUDIO CAPTURADOS:
+- Vehículo: ${vehInfo}
+- Frecuencia dominante: ${freq}Hz
+- Nivel de sonido: ${db}dB
+- RPM estimado: ${rpm > 200 ? rpm : 'no detectado'}
+- Distribución de bandas:
+  · Bajas (0-300Hz): ${Math.round(bands.low*100)}%
+  · Medias (300-1500Hz): ${Math.round(bands.mid*100)}%
+  · Altas (1500-4000Hz): ${Math.round(bands.high*100)}%
+  · Muy altas (4000Hz+): ${Math.round(bands.vhigh*100)}%
+
+DIAGNÓSTICOS PRELIMINARES:
+${topMatches.map(m => `- ${m.name} (${m.score}%): ${m.desc}`).join('\n')}
+
+Basándote en estos datos de audio, da tu diagnóstico técnico profesional en español mexicano:
+1. Tu opinión experta de qué puede ser el sonido
+2. Qué componentes revisar primero (en orden de prioridad)
+3. Herramientas necesarias para confirmar el diagnóstico
+4. Si es urgente o puede esperar
+5. Costo estimado de reparación aproximado en pesos mexicanos
+
+Responde de forma clara y directa, como le hablarías a un técnico en el taller. Máximo 300 palabras.`;
+
+  try {
+    const res = await fetch(API, {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': getApiKey(),
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true',
+      },
+      body: JSON.stringify({ model:MDL, max_tokens:1024, messages:[{role:'user',content:prompt}] })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const txt = (data.content||[]).map(c => c.text||'').join('');
+    document.getElementById('ai-audio-txt').textContent = txt;
+    toast('🤖 Análisis IA completo', 'ok');
+  } catch(err) {
+    document.getElementById('ai-audio-txt').textContent = '⚠ No se pudo conectar con IA. El diagnóstico local está disponible arriba.';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SOUND GUIDE
+// ═══════════════════════════════════════════════════════════════
+function buildSoundGuide() {
+  const container = document.getElementById('sound-guide');
+  if (container.children.length > 0) return; // already built
+  container.innerHTML = SOUND_DB.map(s => `
+    <div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);align-items:flex-start">
+      <span style="font-size:18px;flex-shrink:0">${s.ico}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;color:${s.color}">${s.name}</div>
+        <div style="font-size:8px;color:var(--lgray);line-height:1.6">${s.desc.slice(0,80)}...</div>
+        <div style="font-size:7px;color:var(--cyan);font-family:'Share Tech Mono',monospace;margin-top:2px">${s.freqRange[0]}-${s.freqRange[1]}Hz</div>
+      </div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DIAGRAM MODE (same as before, condensed)
+// ═══════════════════════════════════════════════════════════════
+function populateVehicles() {
+  const sel=document.getElementById('veh-select');
+  const brands={};
+  Object.entries(DB.vehicles).forEach(([k,v])=>{if(!brands[v.brand])brands[v.brand]=[];brands[v.brand].push({key:k,...v});});
+  Object.entries(brands).sort().forEach(([brand,vehs])=>{
+    const og=document.createElement('optgroup'); og.label=brand;
+    vehs.forEach(v=>{const o=document.createElement('option');o.value=v.key;o.textContent=`${v.model} — ${v.engine}`;og.appendChild(o);});
+    sel.appendChild(og);
+  });
+  sel.addEventListener('change',e=>{
+    S.selectedVeh=e.target.value||null;
+    document.getElementById('btn-db').disabled=!S.selectedVeh;
+    if(S.selectedVeh){const v=DB.vehicles[S.selectedVeh];const info=document.getElementById('veh-info');info.style.display='block';
+      info.innerHTML=`<div class="veh-info-row"><span>MOTOR</span><span>${v.engine}</span></div><div class="veh-info-row"><span>ECU</span><span>${v.ecu}</span></div><div class="veh-info-row"><span>PINES</span><span>${v.pines}</span></div>`;
+    } else document.getElementById('veh-info').style.display='none';
+  });
+}
+
+function initDrop(){
+  const dz=document.getElementById('dz'),fi=document.getElementById('file-input');
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+  dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');loadFile(e.dataTransfer.files[0]);});
+  fi.addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0]);});
+  document.getElementById('prev-x').addEventListener('click',e=>{e.stopPropagation();clearImage();});
+  document.getElementById('btn-analyze').addEventListener('click',runAnalysis);
+  document.getElementById('btn-db').addEventListener('click',showFromDB);
+  document.getElementById('btn-new').addEventListener('click',resetAll);
+  document.getElementById('btn-export').addEventListener('click',exportPNG);
+  document.getElementById('btn-export-img').addEventListener('click',exportPNG);
+}
+function loadFile(file){if(!file||!file.type.startsWith('image/'))return;S.imgMime=file.type;const r=new FileReader();r.onload=e=>{const url=e.target.result;S.imgData=url.split(',')[1];document.getElementById('prev-img').src=url;document.getElementById('prev-wrap').style.display='block';document.getElementById('dz').style.display='none';document.getElementById('btn-analyze').disabled=false;S.imgEl=new Image();S.imgEl.onload=sizeCanvases;S.imgEl.src=url;toast('✅ Imagen cargada','ok');};r.readAsDataURL(file);}
+function clearImage(){S.imgData=null;S.imgEl=null;document.getElementById('prev-wrap').style.display='none';document.getElementById('dz').style.display='block';document.getElementById('btn-analyze').disabled=true;document.getElementById('file-input').value='';}
+function resetAll(){clearImage();S.result=null;S.wires=[];S.activeFilter='ALL';document.getElementById('result-panel').style.display='none';document.getElementById('prog-wrap').style.display='none';}
+
+function showFromDB(){
+  if(!S.selectedVeh)return;const v=DB.vehicles[S.selectedVeh];S.source='db';
+  S.wires=v.pinout.map((pin,i)=>({id:'W'+String(i+1).padStart(2,'0'),pin:pin.p,señal:pin.s,color_cable:pin.c,hex:pin.h,col2:pin.col2,voltaje:pin.v,tipo:pin.t,dest:pin.dest,imp:(pin.t==='PWR'||pin.t==='GND')?'CRITICO':'NORMAL'}));
+  S.result=v;S.imgEl=null;
+  document.getElementById('result-panel').style.display='block';
+  document.getElementById('tbl-title').textContent=`${v.ecu} · ${v.brand} ${v.model}`;
+  buildFilterTabs();buildWireTable();buildReport(v);sizeCanvasesDB();renderCanvas();
+  toast(`✅ ${S.wires.length} pines — ${v.brand} ${v.model}`,'ok',4000);
+}
+
+function buildFilterTabs(){
+  const c=document.getElementById('filter-tabs');c.innerHTML='';
+  const counts={ALL:S.wires.length};S.wires.forEach(w=>{counts[w.tipo]=(counts[w.tipo]||0)+1;});
+  c.appendChild(mkTab('ALL','📋 TODOS',counts.ALL,true));
+  Object.entries(TYPE_COLORS).forEach(([k,tc])=>{if(!counts[k])return;const t=mkTab(k,`${tc.ico} ${tc.label.toUpperCase()}`,counts[k],false);t.style.cssText=`color:${tc.hex};border-color:${tc.hex}44;--glow:${tc.glow}`;c.appendChild(t);});
+}
+function mkTab(key,label,count,active){const d=document.createElement('div');d.className='ftab'+(active?' on':'');d.dataset.filter=key;d.innerHTML=`${label} <span class="cnt">(${count})</span>`;d.addEventListener('click',()=>setFilter(key));return d;}
+function setFilter(type){
+  S.activeFilter=type;document.querySelectorAll('.ftab').forEach(t=>t.classList.toggle('on',t.dataset.filter===type));
+  document.querySelectorAll('#wire-tbody tr').forEach(tr=>{if(type==='ALL')tr.classList.remove('hidden-row');else tr.classList.toggle('hidden-row',tr.dataset.tipo!==type);});
+  renderCanvas();const tc=TYPE_COLORS[type];toast(`${tc?.ico||'📋'} Filtro: ${type==='ALL'?'Todos':tc?.label||type}`,'info');
+}
+
+function buildWireTable(){
+  const tb=document.getElementById('wire-tbody');tb.innerHTML='';
+  S.wires.forEach(w=>{const tc=TYPE_COLORS[w.tipo]||TYPE_COLORS['SEN'];const tr=document.createElement('tr');tr.dataset.tipo=w.tipo;tr.style.cursor='pointer';
+    const sw=w.col2&&w.col2!==w.hex?`background:linear-gradient(135deg,${w.hex} 50%,${w.col2} 50%);`:`background:${w.hex};`;
+    tr.innerHTML=`<td><span class="wdot" style="${sw}box-shadow:0 0 4px ${w.hex}66"></span></td><td style="color:var(--white);font-size:8px"><strong>Pin ${w.pin}</strong> · ${w.señal}</td><td style="font-size:7.5px;color:${w.hex}">${w.color_cable||'—'}</td><td style="color:${tc.hex};font-size:8px">${w.voltaje}</td><td style="color:${tc.hex};font-size:7.5px;font-weight:700">${w.tipo}</td>`;
+    tr.addEventListener('click',()=>showWireDetail(w));tb.appendChild(tr);
+  });
+}
+function showWireDetail(w){const tc=TYPE_COLORS[w.tipo]||TYPE_COLORS['SEN'];const pop=document.getElementById('det-pop');pop.style.display='block';document.getElementById('det-title').textContent=`Pin ${w.pin} — ${w.señal}`;document.getElementById('det-title').style.color=tc.hex;document.getElementById('det-body').innerHTML=`<b style="color:var(--white)">Tipo:</b> ${tc.ico} ${tc.label}<br><b style="color:var(--white)">Cable:</b> <span style="color:${w.hex}">${w.color_cable||'—'}</span><br><b style="color:var(--white)">Voltaje:</b> ${w.voltaje}<br><b style="color:var(--white)">Destino:</b> ${w.dest||'—'}`;pop.scrollIntoView({behavior:'smooth',block:'nearest'});highlightWire(w);}
+
+function buildReport(data){
+  let txt=`📊 DATOS DESDE BASE DE DATOS PROPART\n\n📌 ${data.sistema||''}\n🚗 ${data.brand||''} ${data.model||''} ${data.version||''}\n🔧 ${data.engine||''}\n\n${data.descripcion||''}\n\n`;
+  if(data.notas?.length){txt+='📋 NOTAS:\n';data.notas.forEach(n=>txt+='• '+n+'\n');txt+='\n';}
+  if(data.fallas?.length){txt+='⚠ FALLAS:\n';data.fallas.forEach(f=>txt+='• '+f+'\n');}
+  document.getElementById('report-txt').textContent=txt;
+}
+
+// Canvas rendering (condensed)
+function sizeCanvasesDB(){const wrap=document.getElementById('canvas-wrap');const W=wrap.clientWidth;const H=Math.max(300,Math.min(600,S.wires.length*18+80));[canDiag,canOverlay,canHit].forEach(c=>{c.width=W;c.height=H;});wrap.style.height=H+'px';S.canW=W;S.canH=H;}
+function sizeCanvases(){if(S.source==='db'&&!S.imgEl){sizeCanvasesDB();return;}if(!S.imgEl)return;const wrap=document.getElementById('canvas-wrap');const W=wrap.clientWidth;const H=Math.round(W*S.imgEl.naturalHeight/S.imgEl.naturalWidth);[canDiag,canOverlay,canHit].forEach(c=>{c.width=W;c.height=H;});wrap.style.height=H+'px';S.canW=W;S.canH=H;}
+
+function renderCanvas(){
+  const W=S.canW,H=S.canH;if(!W||!H)return;cx.clearRect(0,0,W,H);cx2.clearRect(0,0,W,H);
+  if(S.imgEl){if(S.viewMode==='xray')cx.filter='invert(1) hue-rotate(200deg) brightness(1.15)';else if(S.viewMode==='colored')cx.filter='grayscale(.85) brightness(.55)';else cx.filter='none';cx.drawImage(S.imgEl,0,0,W,H);cx.filter='none';if(S.viewMode!=='schematic')drawOverlay(W,H);}
+  else drawSchematic(W,H);
+  const f=getFiltered();document.getElementById('c-stats').textContent=`${f.length}/${S.wires.length}`;
+}
+function getFiltered(){return S.activeFilter==='ALL'?S.wires:S.wires.filter(w=>w.tipo===S.activeFilter);}
+
+function drawSchematic(W,H){
+  const wires=getFiltered();cx.fillStyle='#050B14';cx.fillRect(0,0,W,H);
+  if(!wires.length)return;
+  cx.strokeStyle='rgba(30,140,224,0.04)';cx.lineWidth=1;for(let y=0;y<H;y+=20){cx.beginPath();cx.moveTo(0,y);cx.lineTo(W,y);cx.stroke();}
+  const ecuW=60,ecuH=Math.min(H-40,wires.length*16+30),ecuX=18,ecuY=(H-ecuH)/2;
+  cx.fillStyle='rgba(168,85,247,.08)';cx.strokeStyle='rgba(168,85,247,.4)';cx.lineWidth=2;roundRect(cx,ecuX,ecuY,ecuW,ecuH,8);cx.fill();cx.stroke();
+  cx.fillStyle='#A855F7';cx.font='bold 10px "Rajdhani",sans-serif';cx.textAlign='center';cx.fillText('ECU',ecuX+ecuW/2,ecuY+15);
+  const destX=W-80,destW=60;cx.fillStyle='rgba(0,196,140,.06)';cx.strokeStyle='rgba(0,196,140,.3)';cx.lineWidth=2;roundRect(cx,destX,ecuY,destW,ecuH,8);cx.fill();cx.stroke();
+  cx.fillStyle='#00C48C';cx.font='bold 10px "Rajdhani",sans-serif';cx.fillText('DESTINO',destX+destW/2,ecuY+15);
+  const spacing=Math.min(16,(ecuH-35)/wires.length),startY=ecuY+32;
+  wires.forEach((w,i)=>{
+    const tc=TYPE_COLORS[w.tipo]||TYPE_COLORS['SEN'];const y=startY+i*spacing;const x1=ecuX+ecuW,x2=destX;
+    cx.fillStyle=tc.hex;cx.font='bold 7px "Share Tech Mono",monospace';cx.textAlign='right';cx.fillText(String(w.pin),ecuX+ecuW-5,y+3);
+    cx2.save();cx2.globalAlpha=.85;cx2.shadowColor=tc.glow;cx2.shadowBlur=8;cx2.strokeStyle=w.hex||tc.hex;cx2.lineWidth=2.5;cx2.lineCap='round';
+    const yOff=(i%2===0?-1:1)*(i%5)*1.5;cx2.beginPath();cx2.moveTo(x1,y);cx2.bezierCurveTo(x1+(x2-x1)*.3,y+yOff,x1+(x2-x1)*.7,y+yOff,x2,y);cx2.stroke();
+    if(w.col2&&w.col2!==w.hex){cx2.globalAlpha=.5;cx2.strokeStyle=w.col2;cx2.lineWidth=1;cx2.setLineDash([4,4]);cx2.beginPath();cx2.moveTo(x1,y);cx2.bezierCurveTo(x1+(x2-x1)*.3,y+yOff,x1+(x2-x1)*.7,y+yOff,x2,y);cx2.stroke();cx2.setLineDash([]);}
+    cx2.shadowBlur=0;cx2.globalAlpha=.9;cx2.fillStyle=w.hex||tc.hex;cx2.beginPath();cx2.arc(x1,y,3,0,Math.PI*2);cx2.fill();cx2.beginPath();cx2.arc(x2,y,3,0,Math.PI*2);cx2.fill();
+    const midX=(x1+x2)/2;const label=w.señal.length>16?w.señal.slice(0,14)+'…':w.señal;cx2.font='bold 7px "Share Tech Mono",monospace';cx2.textAlign='center';const tw=cx2.measureText(label).width;cx2.fillStyle='rgba(5,11,20,.85)';cx2.fillRect(midX-tw/2-3,y-8,tw+6,12);cx2.fillStyle=w.hex||tc.hex;cx2.fillText(label,midX,y+1);
+    cx2.font='6px "Share Tech Mono",monospace';cx2.fillStyle='rgba(106,140,170,.7)';cx2.fillText(w.voltaje,midX,y+9);
+    cx2.restore();w._x1=x1;w._y1=y;w._x2=x2;w._y2=y;w._cx=midX;w._cy=y;
+  });
+  document.getElementById('c-badge').textContent=S.activeFilter==='ALL'?'ESQUEMA COMPLETO':TYPE_COLORS[S.activeFilter]?.label?.toUpperCase()||S.activeFilter;
+}
+
+function drawOverlay(W,H){const wires=getFiltered();wires.forEach((w,i)=>{const tc=TYPE_COLORS[w.tipo]||TYPE_COLORS['SEN'];const n=wires.length;const seed=(typeof w.pin==='string'?w.pin.charCodeAt(0):w.pin||i)*17;const x1=lerp(.06,.22,(seed%9)/9)*W;const y1=lerp(.08,.92,i/Math.max(n-1,1))*H;const x2=lerp(.78,.96,(seed%7)/7)*W;const y2=lerp(.08,.92,((i+2)%n)/Math.max(n-1,1))*H;const cpx=(x1+x2)/2+Math.sin(seed*.9)*W*.12;const cpy=(y1+y2)/2+Math.cos(seed*1.1)*H*.1;w._x1=x1;w._y1=y1;w._x2=x2;w._y2=y2;w._cx=cpx;w._cy=cpy;cx2.save();cx2.globalAlpha=.85;cx2.shadowColor=tc.glow;cx2.shadowBlur=10;cx2.strokeStyle=w.hex||tc.hex;cx2.lineWidth=2.5;cx2.lineCap='round';cx2.beginPath();cx2.moveTo(x1,y1);cx2.quadraticCurveTo(cpx,cpy,x2,y2);cx2.stroke();cx2.shadowBlur=0;cx2.fillStyle=w.hex||tc.hex;cx2.beginPath();cx2.arc(x1,y1,4,0,Math.PI*2);cx2.fill();cx2.beginPath();cx2.arc(x2,y2,4,0,Math.PI*2);cx2.fill();const label=w.señal.length>14?w.señal.slice(0,12)+'…':w.señal;cx2.font='bold 7px "Share Tech Mono",monospace';cx2.textAlign='center';const tw=cx2.measureText(label).width;cx2.fillStyle='rgba(3,7,14,.8)';cx2.fillRect(cpx-tw/2-3,cpy-9,tw+6,13);cx2.fillStyle=w.hex||tc.hex;cx2.fillText(label,cpx,cpy);cx2.restore();});}
+
+function roundRect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.arcTo(x+w,y,x+w,y+r,r);c.lineTo(x+w,y+h-r);c.arcTo(x+w,y+h,x+w-r,y+h,r);c.lineTo(x+r,y+h);c.arcTo(x,y+h,x,y+h-r,r);c.lineTo(x,y+r);c.arcTo(x,y,x+r,y,r);c.closePath();}
+function lerp(a,b,t){return a+(b-a)*Math.min(Math.max(t,0),1);}
+function highlightWire(w){if(!w._cx){renderCanvas();return;}cx3.clearRect(0,0,canHit.width,canHit.height);cx3.save();cx3.shadowColor='#fff';cx3.shadowBlur=22;cx3.strokeStyle='#fff';cx3.lineWidth=5;cx3.globalAlpha=.7;cx3.setLineDash([8,4]);cx3.beginPath();cx3.moveTo(w._x1,w._y1);if(S.source==='db'&&!S.imgEl)cx3.lineTo(w._x2,w._y2);else cx3.quadraticCurveTo(w._cx,w._cy,w._x2,w._y2);cx3.stroke();cx3.restore();setTimeout(()=>cx3.clearRect(0,0,canHit.width,canHit.height),3000);}
+
+function initViewTabs(){document.querySelectorAll('.vtab').forEach(t=>t.addEventListener('click',()=>{S.viewMode=t.dataset.mode;document.querySelectorAll('.vtab').forEach(x=>x.classList.toggle('on',x.dataset.mode===S.viewMode));renderCanvas();}));canHit.addEventListener('click',e=>{if(!S.wires.length)return;const rect=canHit.getBoundingClientRect();const sx=canHit.width/rect.width;const x=(e.clientX-rect.left)*sx;const y=(e.clientY-rect.top)*sx;let best=null,bestD=Infinity;getFiltered().forEach(w=>{if(w._cx===undefined)return;const d=Math.hypot(x-w._cx,y-w._cy);if(d<bestD){bestD=d;best=w;}});if(best&&bestD<70)showWireDetail(best);});}
+function initZoom(){document.getElementById('z-in').addEventListener('click',()=>zoom(.3));document.getElementById('z-out').addEventListener('click',()=>zoom(-.3));document.getElementById('z-fit').addEventListener('click',resetZoom);}
+function zoom(d){S.zoom=Math.max(.25,Math.min(6,S.zoom+d));document.getElementById('canvas-wrap').style.transform=`scale(${S.zoom})`;document.getElementById('canvas-wrap').style.transformOrigin='top left';document.getElementById('z-label').textContent=Math.round(S.zoom*100)+'%';}
+function resetZoom(){S.zoom=1;document.getElementById('canvas-wrap').style.transform='scale(1)';document.getElementById('z-label').textContent='100%';}
+function initFilters(){document.getElementById('btn-all').addEventListener('click',()=>{setFilter('ALL');});document.getElementById('btn-trace').addEventListener('click',()=>{if(S.viewMode==='schematic')S.viewMode='colored';document.querySelectorAll('.vtab').forEach(x=>x.classList.toggle('on',x.dataset.mode===S.viewMode));renderCanvas();});document.getElementById('comp-input').addEventListener('input',()=>{const q=document.getElementById('comp-input').value.toLowerCase();document.querySelectorAll('#wire-tbody tr').forEach(tr=>{if(!q)tr.classList.remove('hidden-row');else tr.classList.toggle('hidden-row',!tr.textContent.toLowerCase().includes(q));});});}
+function clearSearch(){document.getElementById('comp-input').value='';document.querySelectorAll('#wire-tbody tr').forEach(tr=>tr.classList.remove('hidden-row'));}
+window.clearSearch=clearSearch;
+
+function renderLegend(){const g=document.getElementById('leg-grid');g.innerHTML=Object.entries(TYPE_COLORS).map(([k,v])=>`<div class="leg-row" onclick="setFilter('${k}')"><div class="wire-swatch" style="background:${v.hex};box-shadow:0 0 6px ${v.hex}55"></div><div><div class="leg-name">${v.ico} ${k}</div><div class="leg-v">${v.label}</div></div></div>`).join('');}
+
+async function runAnalysis(){
+  if(!S.imgData){toast('Carga diagrama','err');return;}const key=getApiKey();if(!key){toast('⚠ Sin API Key','warn');if(S.selectedVeh)showFromDB();return;}
+  document.getElementById('btn-analyze').disabled=true;document.getElementById('prog-wrap').style.display='block';setP(20,'📡 Enviando a Claude...');
+  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:MDL,max_tokens:4096,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:S.imgMime,data:S.imgData}},{type:'text',text:'Analiza este diagrama eléctrico automotriz. Responde SOLO JSON: {"titulo":"","sistema":"","brand":"","model":"","engine":"","ecu":"","pines":0,"descripcion":"","pinout":[{"p":1,"s":"función","c":"color","h":"#hex","col2":"#hex2","v":"voltaje","t":"SEN|ACT|PWR|GND|COM","dest":"destino"}],"notas":[""],"fallas":[""]}\nTipos: SEN=sensor, ACT=actuador, PWR=alimentación, GND=tierra, COM=comunicación.'}]}]})});
+  setP(70,'🧠 Procesando...');if(!res.ok)throw new Error(`HTTP ${res.status}`);const data=await res.json();const raw=(data.content||[]).map(c=>c.text||'').join('');let parsed;try{const m=raw.match(/\{[\s\S]*\}/);parsed=JSON.parse(m?m[0]:raw);}catch(_){parsed={titulo:'Parcial',descripcion:raw.slice(0,300),pinout:[],notas:[],fallas:[]};}
+  S.source='ia';S.result=parsed;S.wires=(parsed.pinout||[]).map((pin,i)=>({id:'W'+String(i+1).padStart(2,'0'),pin:pin.p,señal:pin.s,color_cable:pin.c,hex:pin.h||'#00D4E8',col2:pin.col2||pin.h||'#00D4E8',voltaje:pin.v,tipo:pin.t||'SEN',dest:pin.dest||'',imp:(pin.t==='PWR'||pin.t==='GND')?'CRITICO':'NORMAL'}));
+  setP(100,'✅ Completo');await delay(350);document.getElementById('prog-wrap').style.display='none';document.getElementById('result-panel').style.display='block';document.getElementById('tbl-title').textContent=parsed.ecu||parsed.titulo||'IA';
+  buildFilterTabs();buildWireTable();buildReport(parsed);sizeCanvases();renderCanvas();toast(`✅ ${S.wires.length} cables IA`,'ok');
+  }catch(err){document.getElementById('prog-wrap').style.display='none';document.getElementById('btn-analyze').disabled=false;toast('Error: '+err.message.slice(0,50),'err');}
+}
+function setP(pct,msg){document.getElementById('prog-fill').style.width=pct+'%';const t=document.getElementById('prog-txt');t.textContent=msg;t.style.color=pct>=100?'var(--green)':'var(--cyan)';}
+function exportPNG(){if(S.canW===0)return;const ec=document.createElement('canvas');ec.width=S.canW;ec.height=S.canH;const c=ec.getContext('2d');c.drawImage(canDiag,0,0);c.drawImage(canOverlay,0,0);const a=document.createElement('a');a.href=ec.toDataURL('image/png');a.download=`propart_${Date.now()}.png`;a.click();toast('📥 PNG exportado','ok');}
+
+let _tt;function toast(msg,type='info',ms=3200){const t=document.getElementById('toast');t.textContent=msg;t.className='show '+type;clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),ms);}
+function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+</script>
 </body>
 </html>
